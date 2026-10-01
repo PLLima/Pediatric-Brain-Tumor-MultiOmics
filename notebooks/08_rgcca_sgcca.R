@@ -28,7 +28,7 @@ if (!dir.exists(DATA_DIR)) {
 LABEL_ORDER <- c("cort", "dipg", "midl")
 
 read_block <- function(block, split) {
-  path <- file.path(DATA_DIR, sprintf("ge_cgh_locIGR__multiblocks__%s__%s.csv", block, split))
+  path <- file.path(DATA_DIR, sprintf("%s_%s.csv", block, split))
   df <- read.csv(path, stringsAsFactors = FALSE)
   rownames(df) <- df$row_id
   df$row_id <- NULL
@@ -38,7 +38,7 @@ read_block <- function(block, split) {
 }
 
 read_targets <- function(split) {
-  path <- file.path(DATA_DIR, sprintf("ge_cgh_locIGR__multiblocks__y__%s.csv", split))
+  path <- file.path(DATA_DIR, sprintf("labels_%s.csv", split))
   df <- read.csv(path, stringsAsFactors = FALSE)
   rownames(df) <- df$row_id
   df$row_id <- NULL

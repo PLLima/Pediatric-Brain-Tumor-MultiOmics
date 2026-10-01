@@ -47,14 +47,14 @@ to_numeric_frame <- function(df) {
 }
 load_block <- function(blk, split) {
   df <- as.data.frame(fread(file.path(data_dir,
-    sprintf("ge_cgh_locIGR__multiblocks__%s__%s.csv", blk, split)),
+    sprintf("%s_%s.csv", blk, split)),
     check.names = FALSE))
   rownames(df) <- as.character(df[[1]]); df[[1]] <- NULL
   to_numeric_frame(df)
 }
 load_y <- function(split) {
   df <- as.data.frame(fread(file.path(data_dir,
-    sprintf("ge_cgh_locIGR__multiblocks__y__%s.csv", split)),
+    sprintf("labels_%s.csv", split)),
     check.names = FALSE))
   rownames(df) <- as.character(df[[1]]); df[[1]] <- NULL
   factor(LABEL_ORDER[max.col(as.matrix(df[, LABEL_ORDER]), ties.method = "first")],
@@ -68,8 +68,8 @@ CGH_te_raw <- load_block("CGH", "test")
 y_tr_raw   <- load_y("train"); y_te_raw <- load_y("test")
 
 # Aligner par intersection des IDs (comme dans NB09/NB11/NB14)
-y_tr_path <- file.path(data_dir, "ge_cgh_locIGR__multiblocks__y__train.csv")
-y_te_path <- file.path(data_dir, "ge_cgh_locIGR__multiblocks__y__test.csv")
+y_tr_path <- file.path(data_dir, "labels_train.csv")
+y_te_path <- file.path(data_dir, "labels_test.csv")
 y_tr_ids <- as.character(as.data.frame(fread(y_tr_path))[[1]])
 y_te_ids <- as.character(as.data.frame(fread(y_te_path))[[1]])
 names(y_tr_raw) <- y_tr_ids

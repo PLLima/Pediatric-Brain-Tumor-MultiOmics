@@ -14,12 +14,12 @@ to_numeric_frame <- function(df) {
 }
 load_block <- function(blk, split) {
   df <- as.data.frame(fread(file.path(data_dir,
-    sprintf("ge_cgh_locIGR__multiblocks__%s__%s.csv", blk, split)),check.names=FALSE))
+    sprintf("%s_%s.csv", blk, split)),check.names=FALSE))
   rownames(df) <- as.character(df[[1]]); df[[1]] <- NULL; to_numeric_frame(df)
 }
 load_y <- function(split) {
   df <- as.data.frame(fread(file.path(data_dir,
-    sprintf("ge_cgh_locIGR__multiblocks__y__%s.csv", split)),check.names=FALSE))
+    sprintf("labels_%s.csv", split)),check.names=FALSE))
   ids <- as.character(df[[1]]); df[[1]] <- NULL
   y <- factor(LABEL_ORDER[max.col(as.matrix(df[, LABEL_ORDER]), ties.method="first")],
               levels=LABEL_ORDER); names(y) <- ids; y

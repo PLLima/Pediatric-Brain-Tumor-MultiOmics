@@ -79,7 +79,7 @@ if (needs_data) {
 
   load_block <- function(block_name, split) {
     path <- file.path(data_dir,
-      sprintf("ge_cgh_locIGR__multiblocks__%s__%s.csv", block_name, split))
+      sprintf("%s_%s.csv", block_name, split))
     df <- as.data.frame(data.table::fread(path, check.names = FALSE))
     id_col <- extract_id_column(df)
     rownames(df) <- as.character(df[[id_col]])
@@ -89,7 +89,7 @@ if (needs_data) {
 
   load_targets <- function(split) {
     path <- file.path(data_dir,
-      sprintf("ge_cgh_locIGR__multiblocks__y__%s.csv", split))
+      sprintf("labels_%s.csv", split))
     y_df <- as.data.frame(data.table::fread(path, check.names = FALSE))
     id_col <- extract_id_column(y_df)
     rownames(y_df) <- as.character(y_df[[id_col]])
