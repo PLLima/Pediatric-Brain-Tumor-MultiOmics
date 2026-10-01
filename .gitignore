@@ -229,5 +229,8 @@ Thumbs.db
 # IDEs
 .claude/
 
+# AI Context
+.ai_context.md
+
 # Data
 data/
