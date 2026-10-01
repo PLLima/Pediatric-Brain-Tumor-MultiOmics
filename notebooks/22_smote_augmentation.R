@@ -20,7 +20,7 @@
 # x_new = x + alpha * (x_neighbor - x), alpha ~ U[0,1].
 # =====================================================================
 
-setwd("/Users/ruben/Documents/Brain-Cancer-Prediction-Model/models")
+setwd("/Users/ruben/Documents/Pediatric-Brain-Tumor-MultiOmics/models")
 suppressPackageStartupMessages({
   if (!requireNamespace("FNN", quietly = TRUE))
     install.packages("FNN", repos = "https://cloud.r-project.org")

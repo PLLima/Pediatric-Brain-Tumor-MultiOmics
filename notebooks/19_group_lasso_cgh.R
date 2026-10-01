@@ -15,7 +15,7 @@
 # Package R : gglasso (Group Lasso) — binomial OvR puis argmax.
 # =====================================================================
 
-setwd("/Users/ruben/Documents/Brain-Cancer-Prediction-Model/models")
+setwd("/Users/ruben/Documents/Pediatric-Brain-Tumor-MultiOmics/models")
 suppressPackageStartupMessages({
   if (!requireNamespace("gglasso", quietly=TRUE))
     install.packages("gglasso", repos="https://cloud.r-project.org")

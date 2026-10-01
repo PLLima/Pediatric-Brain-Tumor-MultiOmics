@@ -1,4 +1,4 @@
-# Brain-Cancer-Prediction-Model
+# Pediatric-Brain-Tumor-MultiOmics
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python/R](https://img.shields.io/badge/Language-Python%20%7C%20R-blue)]()
@@ -68,8 +68,8 @@ The environment requires a dual setup capable of running both **R** and **Python
 ### Setup
 Clone the repository:
 ```bash
-git clone https://github.com/PLLima/Brain-Cancer-Prediction-Model.git
-cd Brain-Cancer-Prediction-Model
+git clone https://github.com/PLLima/Pediatric-Brain-Tumor-MultiOmics.git
+cd Pediatric-Brain-Tumor-MultiOmics
 ```
 
 *Note: Ensure your `data/` directory is populated with the correct datasets (e.g., `cgh_train.csv`, `ge_train.csv`, `labels_train.csv`) prior to running the pipelines, as data is excluded from version control to maintain privacy and repository health.*

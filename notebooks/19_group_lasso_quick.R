@@ -6,7 +6,7 @@
 # groupes CGH actifs, ce qui est suffisant pour le rapport.
 # =====================================================================
 
-setwd("/Users/ruben/Documents/Brain-Cancer-Prediction-Model/models")
+setwd("/Users/ruben/Documents/Pediatric-Brain-Tumor-MultiOmics/models")
 suppressPackageStartupMessages({
   library(gglasso); library(data.table); library(caret)
 })

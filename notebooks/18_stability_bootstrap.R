@@ -11,7 +11,7 @@
 #   nb18_stability_results.rds : pi_hat par méthode × variable
 # =====================================================================
 
-setwd("/Users/ruben/Documents/Brain-Cancer-Prediction-Model/models")
+setwd("/Users/ruben/Documents/Pediatric-Brain-Tumor-MultiOmics/models")
 suppressPackageStartupMessages({
   library(glmnet); library(data.table); library(caret); library(RGCCA)
 })

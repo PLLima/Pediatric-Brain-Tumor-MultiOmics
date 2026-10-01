@@ -14,7 +14,7 @@
 # paired Wilcoxon possible).
 # =====================================================================
 
-setwd("/Users/ruben/Documents/Brain-Cancer-Prediction-Model/models")
+setwd("/Users/ruben/Documents/Pediatric-Brain-Tumor-MultiOmics/models")
 suppressPackageStartupMessages({
   library(glmnet); library(data.table); library(caret)
 })

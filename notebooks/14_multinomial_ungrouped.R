@@ -19,7 +19,7 @@
 #   - delta ≈ 0  et midl_test = 0/3       → H2 vraie (softmax intrinsèquement KO)
 #
 # Usage standalone (depuis la console R) :
-#   setwd("/Users/ruben/Documents/Brain-Cancer-Prediction-Model/models")
+#   setwd("/Users/ruben/Documents/Pediatric-Brain-Tumor-MultiOmics/models")
 #   source("14c_multinomial_ungrouped.R", encoding = "UTF-8")
 #
 # Usage depuis NB14 (après avoir exécuté §1 §2) :
@@ -60,7 +60,7 @@ if (needs_data) {
   root <- normalizePath(getwd(), winslash = "/", mustWork = FALSE)
   candidates <- c(file.path(root,            "data"),
                   file.path(dirname(root),   "data"),
-                  file.path(root, "Brain-Cancer-Prediction-Model", "data"))
+                  file.path(root, "Pediatric-Brain-Tumor-MultiOmics", "data"))
   data_dir <- candidates[dir.exists(candidates)][1]
   if (is.na(data_dir)) stop("Impossible de trouver le dossier data/. ",
                             "setwd() vers le dossier models/ du projet.")

@@ -7,7 +7,7 @@
 # pondérée dans le critère SGCCA.
 # =====================================================================
 
-setwd("/Users/ruben/Documents/Brain-Cancer-Prediction-Model/models")
+setwd("/Users/ruben/Documents/Pediatric-Brain-Tumor-MultiOmics/models")
 suppressPackageStartupMessages({
   library(RGCCA); library(MASS); library(glmnet)
   library(data.table); library(caret)
