@@ -37,7 +37,7 @@ To navigate the high-dimensional, unbalanced, multi-modal data, this project exp
 - **Performance:** The SGCCA + LDA pipeline successfully mitigates the class imbalance and reliably recovers the rare `midl` class, yielding a robust cross-validated balanced accuracy of **0.829**.
 - **Interpretability:** The sparse regularizations yield actionable, finite lists of discriminative genes, directly contributing to biological interpretability.
 
-Detailed results and visualizations are strictly maintained in the [`reports/`](./reports) directory.
+Detailed results and visualizations are strictly maintained in the [`docs/`](./docs) directory.
 
 ---
 
@@ -46,11 +46,19 @@ Detailed results and visualizations are strictly maintained in the [`reports/`](
 ```text
 ├── data/                  # Ignored by git; contains train/test splits (clinical, GE, CGH, labels)
 ├── notebooks/             # Jupyter notebooks and R scripts for EDA, modeling, and evaluation
-├── reports/               # Final documentation, PDF reports, and synthesized markdown summaries
+├── docs/                  # Final documentation, PDF reports, slide decks, and assets
 │   ├── figures/           # Auto-generated plots, confusion matrices, and EDA charts
-│   ├── report.pdf         # Comprehensive theoretical and statistical foundation
-│   ├── presentation.pdf   # Slide deck presentation
-│   └── pipeline_cooperative.pdf
+│   ├── references.bib     # Shared bibliographic references
+│   ├── en/                # English report and slide deck
+│   │   ├── report.tex
+│   │   ├── report.pdf     # Comprehensive theoretical and statistical report (English)
+│   │   ├── presentation.tex
+│   │   └── presentation.pdf # Slide deck presentation (English)
+│   └── fr/                # French report and slide deck
+│       ├── report.tex
+│       ├── report.pdf     # Comprehensive theoretical and statistical report (French)
+│       ├── presentation.tex
+│       └── presentation.pdf # Slide deck presentation (French)
 ├── src/
 │   └── visualization/     # Source code containing python scripts to generate reporting figures
 ├── README.md              # Project overview

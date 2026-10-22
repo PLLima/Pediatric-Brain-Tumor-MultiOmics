@@ -36,8 +36,8 @@
 \definecolor{celllightred}{RGB}{251, 233, 233}
 
 \title[Localisation de tumeurs cérébrales]{Classification de la localisation \\ de tumeurs cérébrales pédiatriques}
-\subtitle{Intégration multi-omique (expression génique + CGH) en régime $p \gg n$}
-\author[]{R. Barata \quad A. De Rouck \quad M. Hoizey-Cangioloni \quad P. Lubaszewski Lima \quad M. Seyedi}
+\subtitle{Intégration multi-omique (expression génique + CGH) en régime \texorpdfstring{$p \gg n$}{p >> n}}
+\author[]{R. Barata\texorpdfstring{\quad}{ }A. De Rouck\texorpdfstring{\quad}{ }M. Hoizey-Cangioloni\texorpdfstring{\quad}{ }P. Lubaszewski Lima\texorpdfstring{\quad}{ }M. Seyedi}
 \institute[CentraleSupélec]{CentraleSupélec \\ \small Encadrant : Arthur Tenenhaus}
 \date[juin 2026]{juin 2026}
 
@@ -784,23 +784,27 @@
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \centering
-      {\footnotesize \textbf{Multinomial Lasso : sweep de $\alpha$}}
+      {\footnotesize Multinomial Lasso : sweep de $\alpha$}
+      \vskip 4pt
       \begin{tikzpicture}
         \begin{axis}[
-            width=5.5cm,
-            height=4.0cm,
+            width=4.01cm,
+            height=3.01cm,
+            scale only axis,
             xmin=0, xmax=1,
-            ymin=0.6, ymax=0.9,
+            ymin=0.6, ymax=0.92,
+            enlarge x limits=0.1,
+            enlarge y limits=false,
             xtick={0, 0.5, 1},
             ytick={0.6, 0.7, 0.8, 0.9},
             xlabel={\footnotesize $\alpha$ (Lasso–Ridge)},
             ylabel={\footnotesize CV bal\_acc},
-            legend style={at={(0.7,0.95)}, anchor=north, legend columns=2, font=\tiny},
+            legend style={at={(0.5, 1.03)}, anchor=south, legend columns=2, font=\tiny},
             tick label style={font=\tiny}
           ]
-          \addplot[thick, gebluemid, mark=*] coordinates {(0, 0.706) (0.5, 0.781) (1.0, 0.784)};
-          \addplot[thick, dipgorange, mark=*] coordinates {(0, 0.706) (0.5, 0.794) (1.0, 0.838)};
-          \legend{grouped, ungrouped}
+          \addplot[thick, geblue, mark=*, mark size=2pt] coordinates {(0, 0.706) (0.5, 0.781) (1.0, 0.784)};
+          \addplot[thick, dipgorange, mark=square*, mark size=2pt] coordinates {(0, 0.706) (0.5, 0.794) (1.0, 0.838)};
+          \legend{\textbf{grouped}, \textbf{ungrouped}}
         \end{axis}
       \end{tikzpicture}
       \vskip 2pt
@@ -809,27 +813,31 @@
 
     \begin{column}{0.48\textwidth}
       \centering
-      {\footnotesize \textbf{Cooperative OvR : sweep de $\rho$}}
+      {\footnotesize Cooperative OvR : sweep de $\rho$}
+      \vskip 4pt
       \begin{tikzpicture}
         \begin{axis}[
-            width=5.5cm,
-            height=4.0cm,
+            width=4.01cm,
+            height=3.01cm,
+            scale only axis,
             xmin=0, xmax=5,
-            ymin=0, ymax=0.9,
+            ymin=0.3, ymax=0.92,
+            enlarge x limits=0.1,
+            enlarge y limits=false,
             xtick={0, 1, 2, 3, 4, 5},
-            ytick={0, 0.4, 0.6, 0.8},
+            ytick={0.4, 0.6, 0.8},
             xlabel={\footnotesize $\rho$ (accord)},
             ylabel={\footnotesize CV bal\_acc},
             tick label style={font=\tiny}
           ]
-          \addplot[thick, gebluemid, mark=*] coordinates {(0, 0.833)};
-          \addplot[only marks, mark=x, mark size=3pt, red, thick] coordinates {
-              (1, 0.4) (2, 0.4) (3, 0.4) (4, 0.4) (5, 0.4)
+          \addplot[only marks, mark=*, mark size=3pt, geblue] coordinates {(0, 0.833)};
+          \addplot[only marks, mark=x, mark size=3.5pt, red, line width=1.2pt] coordinates {
+              (0.1, 0.4) (0.5, 0.4) (1, 0.4) (2, 0.4) (5, 0.4)
             };
         \end{axis}
       \end{tikzpicture}
       \vskip 2pt
-        {\footnotesize Croix rouges : non-convergence du solveur (\texttt{multiview}/\texttt{glmnet}) ;\\ seul $\rho = 0$ exploitable.}
+        {\footnotesize Croix rouges : non-convergence du solveur (\texttt{multiview}/\texttt{glmnet}) ; seul $\rho = 0$ exploitable.}
     \end{column}
   \end{columns}
 \end{frame}
@@ -876,7 +884,7 @@
 
   \medskip
   \begin{exampleblock}{Le « filet de sauvetage » de l’OvR}
-    En OvR, un classifieur \texttt{midl}-vs-reste à coefficients nuls garde un \textit{intercept} calibré sur la prévalence :\\
+    En OvR, un classifieur \texttt{midl}-vs-reste à coefficients nuls garde un \textit{intercept} calibré sur la prévalence :
     $\hat{P}_{\texttt{midl}} \simeq \sigma(\log(8/31)) \simeq 0{,}205$ \textit{constant}.
     Quand \texttt{cort} et \texttt{dipg} rejettent un patient, ce plancher l’emporte par $\arg\max$ (p.ex. P11, P19). La contrainte $\sum_c P_c = 1$ du multinomial aspire au contraire cette masse vers \texttt{dipg}.
   \end{exampleblock}

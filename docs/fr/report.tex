@@ -79,12 +79,12 @@
 }
 
 \usepackage[backend=biber,style=alphabetic]{biblatex}
-\addbibresource{references.bib}
+\addbibresource{../references.bib}
 
 \usepackage[colorlinks=true,linkcolor=csRed,citecolor=csGray,urlcolor=csRed]{hyperref}
 
 \usepackage{graphicx}
-\graphicspath{{figures/}}
+\graphicspath{{../figures/}}
 
 \begin{document}
 
@@ -189,8 +189,8 @@ Les données multi-omiques proviennent de la cohorte IGR et sont organisés en d
     \end{tabular}
 \end{center}
 
-Nous sommes dans un régime $p \gg n$ extrême. La sélection de variables et la régularisation sont donc critiques. \\
-Nous avons remarqué également une autre contrainte : la classe $\text{midl}$ est sous représentée ! \\
+Nous sommes dans un régime $p \gg n$ extrême. La sélection de variables et la régularisation sont donc critiques.
+Nous constatons également une contrainte majeure : la classe \texttt{midl} est fortement sous-représentée.
 
 \newpage
 
@@ -377,7 +377,7 @@ $$\dfrac{1}{m}\sum_{i=1}^m\ell(f(X_i'), Y_i') \underset{m \to +\infty }{\longrig
 
 Enfin, on appelle prédicteur bayésien
 $$f^* = \underset{f}{\text{argmin }} \mathcal R(f)$$
-Et on note $\mathcal R^* = \mathcal R(f^*)$. \\
+Et on note $\mathcal R^* = \mathcal R(f^*)$.
 
 Pour une classe $c \in \mathcal Y$, on définit la probabilité conditionnelle pour chaque classe $c$ :
 $$\eta_c(x)  = \mathbb P[Y = c |X = x]$$
@@ -390,7 +390,7 @@ $$= \mathbb E_{X}\bigg[ \mathbb E _{Y | X} \big[ \mathbf 1_{f(X) \ne Y}\big] \bi
 $$= \mathbb E_X \big[ \mathbb P [f(X) \ne Y | X ]\big]$$
 Puisque $\mathbb P \geqslant 0$, il suffit de minimiser le terme à l'intérieur de l'espérance pour chaque observation $x \in \mathcal{X}$ fixée. Pour un $x$ donné, on note $\hat y = f(x)$ la classe prédite. La probabilité d'erreur est
 $$\mathbb P[\hat y \ne Y | X = x] = 1 - \mathbb P[\hat y = Y | X = x]$$
-On doit alors maximiser $\mathbb P[\hat y = Y | X = x]$, d'où le résultat. \\
+On doit alors maximiser $\mathbb P[\hat y = Y | X = x]$, d'où le résultat.
 
 \textbf{Remarque} : ce résultat est spécifique à la 0-1 loss. Sous une loss asymétrique (par exemple pour pénaliser davantage la mauvaise classification de \texttt{midl}), le prédicteur bayésien ne s'écrirait plus comme l'argmax des $\eta_c$.
 
@@ -472,7 +472,7 @@ $$\beta_c^{(t+1)} = \beta_c^{(t)} - \gamma_t \left( \eta_c^{\beta^{(t)}}(X_i) - 
 
 Dans cette formulation, $\gamma_t > 0$ est hyperparamètre. Il contrôle la taille du pas effectué dans la direction opposée au gradient. S'il est trop grand, l'algorithme risque de diverger ou d'osciller autour du minimum ; s'il est trop petit, la convergence sera extrêmement lente.
 
-Une fois l'algorithme convergé (minimum atteint ou alors critère d'arrêt de l'algorithme), nous obtenons la matrice des estimateurs optimaux $\hat{\beta}$. Pour une nouvelle observation $x$ (appartenant à notre ensemble de test $\mathcal{D}'_m$), l'objectif est d'inférer sa classe. Conformément au paragraphe précédent, cette prédiction est donnée par :
+Une fois l'algorithme ayant convergé (minimum atteint ou critère d'arrêt satisfait), nous obtenons la matrice des estimateurs optimaux $\hat{\beta}$. Pour une nouvelle observation $x$ issue de l'ensemble de test $\mathcal{D}'_m$, l'objectif est d'inférer sa classe. Conformément au paragraphe précédent, cette prédiction est donnée par :
 $$\hat{y} = \text{argmax}_{c \in \mathcal{Y}} \eta_c^{\hat{\beta}}(x)$$
 
 En remplaçant les probabilités $\eta_c^{\hat{\beta}}(x)$ :
@@ -544,7 +544,7 @@ C'est une famille exponentielle avec :
     \item $b(\theta_x) = \log(1 + e^{\theta_x})$
     \item $a(\phi) = 1$ (pas de dispersion)
 \end{itemize}
-On vérifie bien que $\mathbb E[Y | X = x] = b'(\theta_x) = \dfrac{e^{\theta_x}}{1 + e^{\theta_x}} = \mu$ et $\text{Var}(Y | X =x)=b''(\theta_x)= \mu(x)(1- \mu(x))$. \\
+On vérifie bien que $\mathbb E[Y | X = x] = b'(\theta_x) = \dfrac{e^{\theta_x}}{1 + e^{\theta_x}} = \mu$ et $\text{Var}(Y | X =x)=b''(\theta_x)= \mu(x)(1- \mu(x))$.
 
 On postule la linéarité au niveau du paramètre canonique :
 $$\theta(x) = \eta(x) = x^T \beta$$
@@ -552,20 +552,20 @@ On a alors :
 $$\log \dfrac{\mu(x)}{1- \mu(x)} = \eta(x) = x^T\beta$$
 On obtient un lien logit : $\text{logit}(\mu(x)) = x^T\beta$. En inversant :
 $$\mu(x) =  \dfrac{1}{1+e^{-\eta}} = \sigma(x^T \beta)$$
-avec $\sigma$ la sigmoide. On retrouve exactement la formule de la régression logistique binaire.La log-vraisemblance étant strictement concave en $\eta$ (et donc en $\beta$), l'estimateur du maximum de vraisemblance est unique et calculable par méthode de Newton. \\
-Dans le cas $K \geqslant 2$ classes, il faut pousser encore un peu. On suppose que $Y | X =x $ suit une loi catégorielle $\text{Cat}(\mu_1(x), \dots, \mu_K(x))$ avec $\displaystyle \sum_{c=1}^K \mu_c = 1$, de densité :
-$$f_Y(y | x) = \prod_{c=1}^K\mu_c(x)^{\mathbf 1_{y = c}}$$
-En vectorisant $Y$ en one-hot $(Y_1, \dots, Y_K)$ (définition en-dessous) :
-$$f_Y(y | x)= \prod_{c=1}^K\mu_c(x)^{y_c} = \exp\bigg( \sum_{c=1}^{K-1} y_c \underbrace{\log \dfrac{\mu_c(x)}{\mu_K(x)}}_{:= \theta_c(x)} + \log(\mu_K(x))\bigg)$$
-\textbf{Note} : quand $Y \in \left\{1, \dots, K\right\}$ est une variable catégorielle on remplace la valeur scalaire par un vecteur de $\mathbb R^K$ qui contient un seul $1$ (la position de la classe vraie) et $K-1$ zéros. On transforme donc $Y$ en $(0, \dots, 1, \dots, 0)$. \\
+avec $\sigma$ la sigmoïde. On retrouve exactement la formule de la régression logistique binaire. La log-vraisemblance étant strictement concave en $\eta$ (et donc en $\beta$), l'estimateur du maximum de vraisemblance est unique et calculable par méthode de Newton.
 
-On obtient alors une famille exponentielle mais vectorielle : $\theta = (\theta_1, \dots, \theta_K)$. La classe $K$ sert de référence, c'est la même contrainte d'identifiabilité $\beta_K = 0$ expliquée dans la section précédente. \\
+Dans le cas $K \geqslant 2$ classes, on suppose que $Y | X =x $ suit une loi catégorielle $\text{Cat}(\mu_1(x), \dots, \mu_K(x))$ avec $\displaystyle \sum_{c=1}^K \mu_c = 1$, de densité :
+$$f_Y(y | x) = \prod_{c=1}^K\mu_c(x)^{\mathbf 1_{y = c}}$$
+En vectorisant $Y$ en one-hot $(Y_1, \dots, Y_K)$ (définition ci-dessous) :
+$$f_Y(y | x)= \prod_{c=1}^K\mu_c(x)^{y_c} = \exp\bigg( \sum_{c=1}^{K-1} y_c \underbrace{\log \dfrac{\mu_c(x)}{\mu_K(x)}}_{:= \theta_c(x)} + \log(\mu_K(x))\bigg)$$
+\textbf{Note} : quand $Y \in \left\{1, \dots, K\right\}$ est une variable catégorielle, on remplace la valeur scalaire par un vecteur de $\mathbb R^K$ qui contient un unique $1$ à la position de la classe observée et $K-1$ zéros.
+
+On obtient alors une famille exponentielle vectorielle : $\theta = (\theta_1, \dots, \theta_K)$. La classe $K$ sert de référence, correspondant à la contrainte d'identifiabilité $\beta_K = 0$ introduite dans la section précédente.
 On suppose la linéarité au niveau de chaque coordonnée du paramètre canonique :
 $$\theta_c(x) = \eta_c(x) = x^T\beta_c$$
 D'où la matrice de paramètres $\beta \in \mathbb R^{p \times K}$ avec $\beta_K = 0$. Finalement, on obtient :
 $$\mu_c(x) = \dfrac{e^{x^T\beta_c}}{1 + \sum_{c'=1}^{K-1} e^{x^T \beta_{c'}}} = \text{softmax}_c(x^T\beta)$$
-où $\text{softmax}_c :z \mapsto \dfrac{e^{z_c}}{\sum_{k=1}^Ke^{z_k}}$\\
-On retombe alors sur le cadre de la section précédente.
+où $\text{softmax}_c :z \mapsto \dfrac{e^{z_c}}{\sum_{k=1}^Ke^{z_k}}$. On retrouve ainsi le cadre de la section précédente.
 
 
 \subsection{Linear Discriminant Analysis (LDA)}
@@ -739,7 +739,7 @@ L'analyse canonique généralisée régularisée (RGCCA, Tenenhaus \& Tenenhaus 
     \Large \textbf{Formalisme RGCCA-SGCCA}
 \end{center}
 
-On suppose observer des données multiblocs sous forme de $J$ matrices de données $X_1, \dots, X_J$ où $X_j \in \mathbb R^{n \times p_j}$ est un bloc de $p_j$ variables observées sur le même ensemble de $n$ individus. On supposera les variables centrées. \\
+On suppose observer des données multiblocs sous forme de $J$ matrices de données $X_1, \dots, X_J$ où $X_j \in \mathbb R^{n \times p_j}$ est un bloc de $p_j$ variables observées sur le même ensemble de $n$ individus. On supposera les variables centrées.
 
 L'objectif est de trouver un vecteur de poids de bloc $a_j = (a_{j,1}, \dots, a_{j, p_j})^T$ tel que :
 \begin{itemize}
@@ -775,7 +775,7 @@ Pour garantir un domaine non vide, l'article impose $\frac{1}{\sqrt{p_j}} \leqsl
     \Large \textbf{Algorithme}
 \end{center}
 
-Reprenons le problème $(1)$. On note $f$ la fonction objectif du problème. Soit $a = (a_1, \dots, a_J)$. On suppose que $\nabla_jf(a) \ne 0$ (hypothèse pas déconnante, car $\nabla_j f(a) = 0$ caractérise précisemment les extrêmas de $f$, et donc si égalité est satisfaite, alors pas besoin de passer par l'algorithme...). \\
+Reprenons le problème $(1)$. On note $f$ la fonction objectif du problème. Soit $a = (a_1, \dots, a_J)$. On suppose que $\nabla_j f(a) \ne 0$ (hypothèse naturelle, car $\nabla_j f(a) = 0$ caractérise précisément les extrema de $f$, auquel cas le point stationnaire est déjà atteint).
 
 Puisque $f$ est $C^1$ multi-convexe, on a, pour $\tilde a_j \in \Omega_j$ :
 $$f(a_1, \dots, a_{j-1}, \tilde a_j, a_{j+1}, \dots, a_J) \geqslant f(a) + \nabla_jf(a)^T\big( \tilde a_j - a_j\big)$$
@@ -937,11 +937,11 @@ sous les contraintes
 \]
 où $s_1 = 0{,}051$ et $s_2 = 0{,}067$.
 
-Les hyperparamètres de sparsité $(s_1, s_2)$ ont été choisis par cross-validation sur une grille de huit configurations, en suivant le protocole recommandé dans la documentation du package \texttt{RGCCA}. La configuration retenue est celle qui maximise la balanced accuracy moyenne sur les folds de validation, soit \texttt{Set 8} avec  La valeur du critère objectif au point optimal vaut
+Les hyperparamètres de sparsité $(s_1, s_2)$ ont été choisis par cross-validation sur une grille de huit configurations, en suivant le protocole recommandé dans la documentation du package \texttt{RGCCA}. La configuration retenue est celle qui maximise la balanced accuracy moyenne sur les folds de validation, correspondant au \texttt{Set 8} ($s_1 = 0{,}051, s_2 = 0{,}067$). La valeur du critère objectif au point optimal vaut
 $$
-    \sum_{j,k} c_{jk}\, g\bigl(\mathrm{cov}(X_j a_j, X_k a_k)\bigr) = 0.0042.
+    \sum_{j,k} c_{jk}\, g\bigl(\mathrm{cov}(X_j a_j, X_k a_k)\bigr) = 0{,}0042.
 $$
-Ce niveau, faible en valeur absolue, mérite quelques mots d'interprétation. Les variables ayant été préalablement standardisées puis mises à l'échelle par $1/\sqrt{p_j}$, l'inertie totale de chaque bloc a été normalisée à 1, ce qui contracte mécaniquement la magnitude des covariances entre composantes. Une valeur de l'ordre de $10^{-3}$ ne reflète donc pas une faiblesse du signal extrait, mais bien l'échelle imposée par la normalisation des blocs. Ce qui importe ici, c'est moins la valeur brute du critère que la stabilité et la qualité discriminante des composantes $X_j a_j$ obtenues, que nous évaluons en aval par un classifieur LDA et que nous validons par un test de permutation. \\
+Ce niveau, faible en valeur absolue, mérite quelques mots d'interprétation. Les variables ayant été préalablement standardisées puis mises à l'échelle par $1/\sqrt{p_j}$, l'inertie totale de chaque bloc a été normalisée à 1, ce qui contracte mécaniquement la magnitude des covariances entre composantes. Une valeur de l'ordre de $10^{-3}$ ne reflète donc pas une faiblesse du signal extrait, mais bien l'échelle imposée par la normalisation des blocs. Ce qui importe ici, c'est moins la valeur brute du critère que la stabilité et la qualité discriminante des composantes $X_j a_j$ obtenues, que nous évaluons en aval par un classifieur LDA et que nous validons par un test de permutation.
 
 
 \bigskip
@@ -1114,7 +1114,7 @@ l'emporter par argmax pour les exemples de patient P11 et P19. Les deux variante
 
 \section{Stabilité de nos résultats}
 
-L'analyse de robustesse présentée ici mobilise trois outils méthodologiques classiques : le ré-échantillonnage \emph{bootstrap} \cite{efron1979bootstrap} et la sélection par stabilité \cite{meinshausen2010stability} pour évaluer la stabilité de la sélection de variables, et le test de permutation appliqué à la performance d'un classifieur \cite{ojala2010permutation} pour en établir la significativité statistique.
+Notre analyse de robustesse repose sur trois approches méthodologiques : le ré-échantillonnage bootstrap \cite{efron1979bootstrap}, la sélection par stabilité \cite{meinshausen2010stability} évaluant la reproductibilité des variables sélectionnées, et le test de permutation appliqué aux classifieurs \cite{ojala2010permutation} pour établir la significativité statistique.
 
 \subsection{Stabilité de la sélection de variables}
 
@@ -1127,12 +1127,12 @@ La fréquence de sélection ainsi mesurée joue le rôle de la probabilité de s
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.1\linewidth]{fig9_stability_bootstrap.pdf}
+    \includegraphics[width=\linewidth]{fig9_stability_bootstrap.pdf}
     \caption{Fréquence de sélection des variables sur $B$ ré-échantillons bootstrap. Un petit noyau de gènes GE est sélectionné de façon stable, tandis que la grande majorité des variables ne l'est que sporadiquement.}
     \label{fig:stab_bootstrap}
 \end{figure}
 
-La même procédure de ré-échantillonnage, appliquée cette fois au modèle SGCCA, donne une image sensiblement différente (figure \ref{fig:sgcca_stab}). Là où le Lasso One-vs-Rest concentre la stabilité sur un noyau éduit, autour d’un gène GE dominant (\texttt{A\_23\_P205428}, $\hat{\Pi}_k \approx 0,81$) nettement détaché du reste,
+La même procédure de ré-échantillonnage, appliquée cette fois au modèle SGCCA, donne une image sensiblement différente (figure \ref{fig:sgcca_stab}). Là où le Lasso One-vs-Rest concentre la stabilité sur un noyau réduit, autour d’un gène GE dominant (\texttt{A\_23\_P205428}, $\hat{\Pi}_k \approx 0,81$) nettement détaché du reste,
 SGCCA répartit la sélection sur une longue liste de gènes dont la fréquence décroît graduellement (de $\hat{\Pi}_k \approx 0,74$ à $0,30$), sans rupture franche : seules deux ou trois variables franchissent le seuil $\pi_{\text{thr}} = 0,6$, et la large bande intermédiaire ($0,3 - 0,6$) change de composition d’un ré-échantillon à l’autre. Le bloc CGH, enfin, n’y contribue qu’un bruit diffus de basse fréquence ($\hat{\Pi}_k \le 0,11$).
 
 Cette diffusion des poids est cohérente avec le mauvais conditionnement du problème augmenté évoqué plus haut, où les pénalités $\ell^1$ et d’accord tirent vers des configurations contradictoires : faute de signal
@@ -1141,14 +1141,14 @@ plus stable et plus interprétable, et c’est cet écart de stabilité qui moti
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.1\linewidth]{fig12_sgcca_stability.pdf}
+    \includegraphics[width=\linewidth]{fig12_sgcca_stability.pdf}
     \caption{Fréquence de sélection des variables sous SGCCA, sur $B = 200$ ré-échantillons bootstrap ($s_{GE} = 0,051, s_{CGH} = 0,067, \text{seuil } 0,6$). Comparée à la figure \ref{fig:stab_bootstrap}, la sélection y est nettement plus diffuse : aucun noyau franc ne se détache et le bloc CGH demeure non informatif.}
     \label{fig:sgcca_stab}
 \end{figure}
 
 \subsection{Reproductibilité et synthèse}
 
-L'ensemble des expériences a été conduit avec des graines aléatoires fixées (découpage des plis, ré-échantillonnage bootstrap, initialisation des solveurs), garantissant la reproductibilité exacte des chiffres rapportés. Le test de permutation ($p = 0{,}002$, sous-section précédente) confirme par ailleurs que le signal prédictif n'est pas un artefact du hasard.
+L'ensemble des expériences a été conduit avec des graines aléatoires fixées (découpage des plis, ré-échantillonnage bootstrap et initialisation des solveurs), garantissant la reproductibilité exacte des valeurs rapportées. Le test de permutation ($p = 0{,}002$) confirme par ailleurs que le signal prédictif n'est pas un artefact dû au hasard.
 
 En synthèse, nous distinguons :
 \begin{itemize}
