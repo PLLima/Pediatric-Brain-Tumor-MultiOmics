@@ -1,0 +1,1195 @@
+\documentclass[a4paper,11pt]{paper}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[most]{tcolorbox} % Le package magique
+\usepackage{float}
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+% Définition de la boîte "demo"
+\usepackage{booktabs}        % Pour un tableau professionnel
+\usepackage{multicol}        % Pour la gestion des colonnes si besoin
+
+\newtcolorbox{demo}{
+  breakable,                 % Autorise le saut de page
+  enhanced,                  % Active les fonctions avancées
+  colback=gray!5,            % Fond gris très clair (5% de noir)
+  colframe=black,            % Couleur de la barre (noire)
+  arc=0pt, outer arc=0pt,    % Pas d'arrondis (coins carrés)
+  boxrule=0pt,               % Pas de bordure par défaut...
+  leftrule=2pt,              % ...sauf une barre de 2pt à gauche
+  left=10pt, right=10pt,     % Marges intérieures horizontales
+  top=8pt, bottom=8pt,       % Marges intérieures verticales
+  before skip=10pt,          % Espace avant la boîte
+  after skip=10pt,           % Espace après la boîte
+  parbox=false               % Permet le comportement normal des paragraphes
+}
+
+\usepackage{geometry}
+\geometry{left=2cm,right=2cm,top=2.5cm,bottom=2.5cm}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0em}
+
+\usepackage{xcolor}
+\definecolor{csRed}{RGB}{99,0,60}
+\definecolor{csGray}{RGB}{64,63,63}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\fancyfoot[C]{\textcolor{csGray}{\thepage}}  
+
+\usepackage{titlesec}
+\titleformat*{\section}{\Large\bfseries\color{csRed}}
+\titleformat*{\subsection}{\large\bfseries\color{csGray}}
+\titleformat*{\subsubsection}{\bfseries\color{csGray}}
+
+\usepackage{tocloft}
+\renewcommand{\cfttoctitlefont}{\hfill\LARGE\bfseries\color{csRed}}
+\renewcommand{\cftaftertoctitle}{\hfill}
+\renewcommand{\cftsecfont}{\color{csRed}}
+\renewcommand{\cftsecpagefont}{\color{csRed}}
+\renewcommand{\cftsubsecfont}{\color{csGray!80}}
+\renewcommand{\cftsubsecpagefont}{\color{csGray!80}}
+\setlength{\cftbeforesecskip}{0.3em}
+
+\usepackage{amsthm,amsmath,amssymb}
+\theoremstyle{plain}
+\newtheorem{theorem}{Théorème}[section]
+\newtheorem{lemma}[theorem]{Lemme}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollaire}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Définition}
+\newtheorem{hypothesis}[theorem]{Hypothèse}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remarque}
+
+\usepackage{listings}
+\lstset{
+  basicstyle = \small\ttfamily,
+  keywordstyle=\color{csRed},
+  commentstyle=\color{csGray!80},
+  frame=single,
+  breaklines=true,
+  showstringspaces=false
+}
+
+\usepackage[backend=biber,style=alphabetic]{biblatex}
+\addbibresource{references.bib}
+
+\usepackage[colorlinks=true,linkcolor=csRed,citecolor=csGray,urlcolor=csRed]{hyperref}
+
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+
+\begin{document}
+
+
+\begin{center}
+    {\huge \bfseries Localisation de tumeurs cérébrales}\\[1em]
+    {\Large Data Science – Ruben Barata, Arthur De Rouck, Marie Hoizey-Cangioloni, Pedro Lubaszewski Lima, Mohammad Seyedi}\\[0.5em]
+    {CentraleSupélec} \\
+    June 6, 2026
+\end{center}
+
+\noindent\rule{\textwidth}{0.5pt}
+\vspace{1em}
+\begin{center}
+    \textbf{Disponibilité du code.} L'ensemble du code source et des scripts sont disponibles publiquement à l'adresse suivante :\\ \url{https://github.com/PLLima/Pediatric-Brain-Tumor-MultiOmics}
+\end{center}
+
+\vspace{1em}
+\noindent\rule{\textwidth}{0.5pt}
+
+\clearpage
+\tableofcontents
+\clearpage
+
+
+\newpage
+
+\section{Introduction}
+
+Les tumeurs cérébrales constituent la première cause de mortalité par cancer chez l'enfant, et leur prise en charge dépend étroitement de leur localisation anatomique : à histologie comparable, une tumeur du tronc cérébral et une tumeur corticale n'appellent ni la même résécabilité chirurgicale, ni le même protocole de radiothérapie, ni le même pronostic. Déterminer la localisation à partir de la seule signature moléculaire de la tumeur présente donc un intérêt clinique direct, tant pour orienter la stratégie thérapeutique que pour comprendre les mécanismes biologiques propres à chaque site.
+
+Notre projet porte sur la classification de la localisation de tumeurs cérébrales pédiatriques à partir de données moléculaires multi-omiques. La classification est opérée selon $3$ classes :
+\begin{itemize}
+    \item $\text{cort}$ (cortical) : ces tumeurs se situent dans le cortex cérébral, c'est-à-dire dans la couche superficielle des hémisphères cérébraux.
+    \item $\text{dipg}$ : tumeurs situées spécifiquement dans le pont (pont de Varole), une zone du cerveau agissant comme un centre de contrôle vital. Cette localisation rend impossible toute opération.
+    \item $\text{midl}$ (ligne médiane) : tumeurs situées le long de la médiane du cerveau, en dehors du pont.
+\end{itemize}
+
+Ces tumeurs sont très différentes, tant sur le plan biologique qu'anatomique. L'objectif final de ce travail est de guider la stratégie thérapeutique.
+
+Sur le plan statistique, le problème cumule trois difficultés que l'analyse exploratoire (§\ref{sec:eda}) met en évidence et qui structurent l'ensemble de nos choix méthodologiques : un régime de très grande dimension ($p \simeq 17\,000$ variables pour $n = 39$ patients d'entraînement), une intégration de deux blocs hétérogènes et de tailles très inégales (expression génique et CGH), et un fort déséquilibre de classes, la classe $\text{midl}$ ne comptant que $8$ patients en entraînement. À chacune de ces difficultés nous opposons une réponse explicite : régularisation et sélection parcimonieuse de variables pour la grande dimension ; mise à l'échelle par bloc et projection supervisée (SGCCA) pour l'hétérogénéité des blocs ; et, pour le déséquilibre, une \textbf{pondération de la vraisemblance par l'inverse de la prévalence de chaque classe} (dérivée en §\ref{sec:weights}), assortie d'une évaluation par balanced accuracy plutôt que par accuracy brute. Le présent rapport est organisé comme suit : la section~\ref{sec:eda} caractérise le jeu de données ; les sections suivantes formalisent le cadre probabiliste, les modèles pénalisés et les méthodes de fusion multibloc (Cooperative Learning, RGCCA/SGCCA) ; la dernière partie présente les résultats expérimentaux et leur validation statistique.
+
+
+\begin{center}
+    \Large \textbf{Les données}
+\end{center}
+
+Les données multi-omiques proviennent de la cohorte IGR et sont organisés en deux blocs :
+
+\bigskip
+
+\begin{tcbitemize}[
+        raster columns=2,
+        raster equal height,
+        raster column skip=1em,
+        enhanced,
+        boxrule=0.8pt,
+        fonttitle=\bfseries\small,
+        rounded corners,
+        attach boxed title to top left,
+        boxed title style={sharp corners, size=small}
+    ]
+    \tcbitem[
+        title=Bloc GE (Gene Expression),
+        colback=blue!5!white,
+        colframe=blue!40!black,
+        colbacktitle=blue!15!white,
+        coltitle=blue!60!black
+    ]
+    \begin{itemize}
+        \item 15\,702 features
+        \item Niveaux d'expression génique
+        \item Signal discriminant principal
+    \end{itemize}
+
+    \tcbitem[
+        title=Bloc CGH (Altérations chromosomiques),
+        colback=orange!8!white,
+        colframe=orange!50!black,
+        colbacktitle=orange!15!white,
+        coltitle=orange!70!black
+    ]
+    \begin{itemize}
+        \item 1\,229 features
+        \item Gains/pertes chromosomiques
+        \item Signal faible isolément
+    \end{itemize}
+\end{tcbitemize}
+
+\vspace{1em}
+\begin{center}
+    \begin{tabular}{lcc}
+        \toprule
+                       & \textbf{Train} & \textbf{Test} \\
+        \midrule
+        cort           & 15             & 5             \\
+        dipg           & 16             & 6             \\
+        midl           & 8              & 3             \\
+        \midrule
+        \textbf{Total} & \textbf{39}    & \textbf{14}   \\
+        \bottomrule
+    \end{tabular}
+\end{center}
+
+Nous sommes dans un régime $p \gg n$ extrême. La sélection de variables et la régularisation sont donc critiques. \\
+Nous avons remarqué également une autre contrainte : la classe $\text{midl}$ est sous représentée ! \\
+
+\newpage
+
+
+\section{Analyse exploratoire des données (EDA)}
+\label{sec:eda}
+
+Avant toute modélisation, nous avons mené une analyse exploratoire systématique afin de caractériser les difficultés intrinsèques du jeu de données et d'orienter les choix méthodologiques. Cette section est volontairement descriptive : les statistiques supervisées (tests univariés, ANOVA) y sont employées comme diagnostics exploratoires et non comme outil de sélection de variables. Toute sélection effective de features est réalisée à l'intérieur des plis de validation croisée (sections Cross-Validation et Résultats) pour éviter tout data leakage.
+
+Quatre constats structurent l'ensemble de notre travail et seront illustrés tour à tour : (i) un régime $p \ggg n$ extrême avec une classe rare \texttt{midl} ; (ii) une domination dimensionnelle massive du bloc GE ; (iii) une absence de séparation non supervisée des classes ; (iv) un signal univarié réel mais peu robuste en multivarié, particulièrement pour \texttt{midl}.
+
+\subsection{Structure de la cohorte : \texorpdfstring{$p \ggg n$}{p >> n}, classe rare et bloc dominant}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig0_eda_cohort.png}
+    \caption{\textbf{(A)} Effectifs par classe en train et test. \textbf{(B)} Poids inverses de prévalence
+        $w_c = n/(K\,n_c)$ utilisés pour rééquilibrer la vraisemblance. \textbf{(C)} Dimension des deux blocs :
+        GE concentre $92{,}7\%$ des variables.}
+    \label{fig:eda_cohort}
+\end{figure}
+
+\paragraph{Un régime $p \ggg n$ extrême.}
+La cohorte compte $n_{\text{train}} = 39$ patients pour $p = 16\,931$ variables ($15\,702$ GE $+\ 1\,229$ CGH), soit un rapport
+$$
+    \frac{p}{n} \;=\; \frac{16\,931}{39} \;\simeq\; 434.
+$$
+Dans ce régime, la matrice de Gram empirique $X^{\!\top}X$ est de rang au plus $n-1 = 38$ : elle est massivement singulière, tout estimateur non régularisé est non identifiable, et le risque de sur-apprentissage est maximal. Ce seul constat justifie le recours systématique à la régularisation ($\ell^1$, $\ell^2$) et à la sélection parcimonieuse de variables dans toute la suite.
+
+\paragraph{Une classe minoritaire qui constitue le verrou principal.}
+La distribution des classes est déséquilibrée (Fig.~\ref{fig:eda_cohort}A) : \texttt{cort} ($15$), \texttt{dipg} ($16$) et \texttt{midl} ($8$) en train. La classe \texttt{midl} ne représente que $8/39 \simeq 20{,}5\%$ du train et seulement $3$ patients en test. Or chaque erreur sur \texttt{midl} déplace son recall par pas de $1/3 \simeq 0{,}33$ sur le test : le verrou de tout le projet n'est pas \texttt{cort} ou \texttt{dipg}, presque toujours bien classées, mais bien la classe rare \texttt{midl}.
+
+Pour contrer ce déséquilibre dans la vraisemblance, nous utilisons des poids inverses de prévalence (Fig.~\ref{fig:eda_cohort}B)
+$$
+    w_c \;=\; \frac{n}{K\, n_c}, \qquad
+    w_{\text{cort}} = 0{,}87,\;\; w_{\text{dipg}} = 0{,}81,\;\; w_{\text{midl}} = 1{,}62,
+$$
+qui multiplient la contribution de chaque patient \texttt{midl} par $\simeq 1{,}6$ (la dérivation de ces poids est détaillée en §\ref{sec:weights}). Cette pondération est statistiquement plus défendable qu'un sur-échantillonnage synthétique de type SMOTE (que nous avons testé mais peu concluant) : elle rééquilibre la log-vraisemblance sans fabriquer de faux patients dans un espace à $16\,931$ dimensions, opération hautement instable en régime $p \ggg n$
+
+\begin{remark}[Le « filet de sauvetage » de la classe rare]
+    En décomposition One-vs-Rest, un classifieur binaire \texttt{midl}-vs-reste dont tous les coefficients seraient nuls conserve un intercept calibré sur la prévalence empirique. La probabilité plancher prédite vaut alors
+    $$
+        \hat P_{\text{midl}} \;\simeq\; \frac{n_{\text{midl}}}{n} \;=\; \frac{8}{39} \;\simeq\; 0{,}205,
+    $$
+    constante pour tous les patients. Si les modèles \texttt{cort} et \texttt{dipg} rejettent simultanément un patient, ce plancher peut suffire à le faire gagner par \texttt{argmax}. Ce mécanisme, déjà visible au stade de l'EDA, explique a posteriori pourquoi les pipelines OvR récupèrent $2/3$ des \texttt{midl} là où la formulation multinomiale, contrainte par $\sum_c P_c = 1$, en récupère $0/3$ (cf. section Résultats).
+\end{remark}
+
+\paragraph{Une domination dimensionnelle du bloc GE.}
+Le bloc GE concentre $92{,}7\%$ des variables contre $7{,}3\%$ pour CGH (Fig.~\ref{fig:eda_cohort}C). Cette asymétrie a une conséquence directe sur les méthodes de fusion. Après standardisation variable par variable, la variance de chaque colonne vaut $1$, donc l'inertie totale d'un bloc est simeqimativement égale à son nombre de variables $p_j$. L'inertie concaténée de $[\,\text{GE}\,|\,\text{CGH}\,]$ est donc dominée à plus de $90\%$ par GE : toute méthode naïve sur la concaténation favorise mécaniquement GE et marginalise CGH. C'est précisément ce déséquilibre qui motive la remise à l'échelle $\tilde X_j = X_j/\sqrt{p_j}$ employée par la SGCCA (cf. section RGCCA et SGCCA), afin de ramener l'inertie de chaque bloc à $1$.
+
+\subsection{Qualité des données et prétraitement}
+
+\paragraph{Valeurs manquantes et variance.}
+L'inspection des deux blocs révèle des valeurs manquantes éparses et l'absence de variables de variance strictement nulle après imputation. Conformément au protocole du dépôt, nous imputons par la médiane calculée sur le train (puis appliquée au test), choix robuste aux valeurs extrêmes et qui n'utilise jamais l'information du test, évitant ainsi toute fuite.
+
+\paragraph{Échelle des données GE.}
+La distribution globale des $39 \times 15\,702$ valeurs d'expression (Fig.~\ref{fig:eda_ge_dist}) est quasi symétrique, centrée ($\text{médiane} = 0{,}03$) et bornée ($\min = -10{,}43$, $\max = 9{,}87$) : il s'agit de niveaux d'expression déjà normalisés (log-ratios). Aucune transformation supplémentaire (log, Box-Cox) n'est donc nécessaire ; une simple standardisation $z$-score suffit en amont des méthodes sensibles à l'échelle (PCA, SGCCA).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\linewidth]{eda_ge_distribution.png}
+    \caption{Distribution globale des niveaux d'expression GE ($n = 39$ patients $\times\ 15\,702$ gènes).
+        Le signal est centré et simeqimativement symétrique : données déjà normalisées, standardisation
+        $z$-score suffisante.}
+    \label{fig:eda_ge_dist}
+\end{figure}
+
+\paragraph{Décalage train/test.}
+Avec un test de seulement $14$ patients, nous avons vérifié l'écart standardisé des moyennes (standardized mean difference, SMD) entre train et test, variable par variable, après standardisation par les statistiques du train. La distribution des $|\text{SMD}|$ reste modérée pour la grande majorité des variables : il n'existe pas de covariate shift systématique massif, et la petite taille du test demeure la principale source d'incertitude — d'où le recours à une validation croisée répétée plutôt qu'à un simple split (§ Cross-Validation).
+
+\subsection{Séparabilité non supervisée : PCA par bloc}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig0_eda_pca.png}
+    \caption{PCA non supervisée (deux premières composantes) pour GE, CGH et la concaténation
+        GE+CGH. Cercles : train ; croix : test. Les trois classes se recouvrent largement, en particulier
+        \texttt{midl}, et les deux premières composantes ne capturent qu'une faible part de variance.}
+    \label{fig:eda_pca}
+\end{figure}
+
+La PCA répond à une question simple : les classes sont-elles visibles sans supervision ? La réponse est négative (Fig.~\ref{fig:eda_pca}). Les deux premières composantes ne capturent qu'une faible part de l'inertie - PC1 + PC2 $\simeq 20\%$ pour GE ($10{,}8\% + 9{,}4\%$), $\simeq 27\%$ pour CGH ($14{,}6\% + 12{,}2\%$) - et surtout les nuages des trois classes se chevauchent fortement. La classe \texttt{midl} en particulier ne forme aucun amas distinct : ses points sont dispersés au milieu de \texttt{cort} et \texttt{dipg}.
+
+\begin{remark}
+    Cette absence de structure non supervisée a une conséquence méthodologique forte : une réduction de dimension non supervisée en amont (PCA, Sparse PCA) jette l'essentiel de la variance dans des directions non discriminantes pour \texttt{midl}. Cela explique a priori l'échec des pipelines \texttt{Sparse PCA + LogReg} que nous avons testés (résultats désastreux, non rapportés). À l'inverse, une projection supervisée (SGCCA, qui corrèle chaque bloc au bloc des labels) est indispensable pour faire émerger les directions discriminantes.
+\end{remark}
+
+\subsection{Structure de corrélation et redondance}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\linewidth]{eda_pca_scree.png}
+    \caption{Scree plot par bloc : variance expliquée par composante (barres) et variance cumulée (courbe rouge), seuils 80\% et 90\% en pointillés. En régime $p \ggg n$, le rang est borné par $n-1 = 38$ : la vitesse de concentration de la variance mesure la redondance (collinéarité) intra-bloc et la dimensionnalité effective.}
+    \label{fig:eda_pca_scree}
+\end{figure}
+
+En régime $p \ggg n$, une part importante des variables est redondante. Plutôt qu’une matrice de corrélation brute sur un échantillon de variables tirées au hasard (illisible sur 15 702 / 1 229 colonnes et sans ordre interprétable) nous résumons cette structure par la PCA de chaque bloc (Fig.~\ref{fig:eda_pca_scree}) si la variance se concentre dans peu de composantes, c’est que les variables sont fortement corrélées. Le constat est net. Les deux blocs ont une dimensionnalité effective très inférieure à leur nombre de variables (rang $\leq 38$) : il faut 20 composantes pour capturer 80\% de la variance GE (27 pour 90\%), contre seulement 13 pour CGH (17 pour 90\%). La redondance est donc plus marquée dans CGH, ce qui est cohérent avec des segments chromosomiques contigus, donc co-altérés tandis que GE répartit sa variance sur davantage de directions. Cette redondance a deux implications directes :
+\begin{itemize}
+    \item elle justifie une pénalité Elastic-Net plutôt que Lasso pur : la composante $\ell^2$ stabilise la sélection parmi des variables quasi colinéaires, là où le Lasso en choisirait une au hasard ;
+    \item elle éclaire la divergence numérique de l'algorithme de Newton observée pour le cooperative learning à $\rho > 0$ : la matrice $X^{\!\top}WX$ est déjà quasi singulière, et le terme d'accord $\rho\,X^{\!\top}X$ amplifie d'un facteur $(1+\rho)$ des corrélations intra-bloc déjà extrêmes (cf. section Résultats).
+\end{itemize}
+
+\subsection{Signal univarié autour de \texttt{midl}}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig0_eda_midl_signal.png}
+    \caption{À gauche et au centre : top 15 des variables GE et CGH par $|t|$ de Welch pour le contraste
+        \texttt{midl} vs reste (rouge : sur-exprimé chez \texttt{midl}). À droite : profil CGH moyen lissé par
+        classe le long de l'index génomique ordonné.}
+    \label{fig:eda_midl}
+\end{figure}
+
+Pour évaluer s'il existe un signal exploitable pour la classe rare, nous calculons des $t$ de Welch univariés \texttt{midl}-vs-reste (Fig.~\ref{fig:eda_midl}). Le test de Welch est préféré au $t$ de Student classique car il ne suppose pas l'égalité des variances entre groupes, hypothèse intenable avec $n_{\text{midl}} = 8$ contre $31$ pour le reste.
+\begin{itemize}
+    \item \textbf{GE} : quelques gènes atteignent $|t| \simeq 4$–$5$ (p.~ex. \texttt{A\_32\_P85999}, sur-exprimé chez \texttt{midl}), tandis qu'une majorité de gènes y sont sous-exprimés. Un signal univarié existe donc bien.
+    \item \textbf{CGH} : les statistiques plafonnent vers $|t| \simeq 3$, signal plus faible, cohérent avec le fait que les modèles parcimonieux pilotés par les données ne sélectionnent presque jamais CGH.
+    \item \textbf{Profil CGH} : les courbes moyennes par classe se chevauchent largement le long de l'index génomique (Fig.~\ref{fig:eda_midl}, droite) ; aucune région n'isole nettement la classe rare.
+\end{itemize}
+
+\begin{remark}[Univarié $\neq$ multivarié robuste]
+    La présence d'un signal univarié ne garantit pas une discrimination multivariée robuste. Avec $p \ggg n$ et $n_{\text{midl}} = 8$, ces $t$-statistiques sont elles-mêmes très bruitées (un seul patient peut faire basculer le classement) et ne contrôlent pas la multiplicité ($\sim 17\,000$ tests). Ces diagnostics indiquent où chercher, mais ne constituent pas une sélection valide : c'est pourquoi la sélection finale est confiée à des méthodes pénalisées intra-CV.
+\end{remark}
+
+\subsection{Choix de la métrique d'évaluation}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.92\linewidth]{fig0_eda_metric.png}
+    \caption{\textbf{(A)} Matrice de confusion d'un classifieur ne prédisant jamais \texttt{midl}
+        ($\text{recall}_{\text{midl}} = 0$). \textbf{(B)} La même prédiction obtient un macro-recall de $0{,}667$
+        mais une « balanced accuracy » moyenne one-vs-rest (définition \texttt{caret}) de $0{,}773$, qui masque
+        l'échec total sur \texttt{midl}.}
+    \label{fig:eda_metric}
+\end{figure}
+
+Le déséquilibre de classes impose un choix de métrique explicite. L'accuracy brute pondère implicitement les classes par leur fréquence et masquerait un échec sur \texttt{midl} : un classifieur ne prédisant jamais \texttt{midl} atteindrait déjà $\simeq 11/14$ sur le test. Nous retenons donc le \textbf{macro-recall} (moyenne des recalls par classe, cf. la balanced accuracy de la section Cross-Validation), qui attribue le même poids aux trois classes.
+
+Un piège subtil mérite d'être signalé (Fig.~\ref{fig:eda_metric}). Dans plusieurs scripts \texttt{R}, la moyenne des colonnes \texttt{"Balanced Accuracy"} renvoyées par \texttt{caret} (\texttt{mean(cm\$byClass[,...])}) calcule la moyenne des balanced accuracies one-vs-rest, qui incorporent la spécificité. Or la spécificité d'une classe rare reste élevée même quand son recall est nul. Sur l'exemple de la Fig.~\ref{fig:eda_metric}, où aucun patient n'est prédit \texttt{midl} :
+$$
+    \text{macro-recall} = \tfrac{1}{3}\!\left(\tfrac{5}{5} + \tfrac{6}{6} + \tfrac{0}{3}\right) = 0{,}667,
+    \qquad
+    \text{BA caret (OvR)} = 0{,}773.
+$$
+La métrique \texttt{caret} surévalue donc le modèle de $+0{,}1$ en masquant $\text{recall}_{\text{midl}} = 0$. Nous suivons par conséquent explicitement le recall par classe et la matrice de confusion, et non la seule BA agrégée.
+
+\subsection{Implications pour la modélisation}
+Cette analyse exploratoire des données nous renseigne sur les problèmes fondamentaux de ce projet :
+\begin{itemize}
+    \item Le régime $p \ggg n$ : impose une régularisation importante et de la sélection de variable en plus de la pénalisation $\ell^1$ .
+    \item Le verrou de la classe minoritaire : le déséquilibre impose des stratégies de "rééquilibrage" (métriques adaptées, pondération de la vraisemblance, etc.)
+    \item La projection non supervisée ne sépare pas les classes $\Longrightarrow$ attire l’oeil vers de la projection supervisée (LDA, SGCCA).
+    \item Domination structurel du bloc GE (92.7\% des variables et de l’inertie standardisée) $\Longrightarrow$ Nous avons du travailler avec les deux blocs (GE, CGH) de manière appropriée (SGCCA).
+\end{itemize}
+
+\newpage
+
+
+\section{Formalisme mathématique}
+
+
+\subsection{Notion d'entropie croisée\texorpdfstring{\protect\footnote{Cette section s'appuie sur le cours de théorie de l'information, CentraleSupélec.}}{}}
+
+L'entropie croisée est une mesure mathématique permettant de quantifier la différence entre deux distributions de probabilités. De manière générale, si l'on considère une distribution de probabilité «~vraie~» (ou cible) $P$ et une distribution «~estimée~» (ou simeqimée) $Q$ sur un même espace d'événements discret $\mathcal{X}$, l'entropie croisée de $Q$ par rapport à $P$ se définit par :
+$$H(P, Q) = - \sum_{x \in \mathcal{X}} P(x) \log Q(x)$$
+
+Conceptuellement, elle représente le nombre moyen de bits (si l'on utilise un logarithme en base 2) nécessaires pour coder un événement tiré de la vraie distribution $P$ en utilisant un code optimisé pour la distribution estimée $Q$. Minimiser l'entropie croisée revient exactement à minimiser la divergence de Kullback-Leibler
+$$D_{KL}(P || Q) = -\sum_{x \in \mathcal X} P(x) \log \dfrac{Q(x)}{P(x)}$$
+
+
+\subsection{Modélisation du problème\texorpdfstring{\protect\footnote{Cette section s'appuie sur le cours de machine learning théorique, ENSAE.}}{}}
+
+
+Nous sommes dans un problème de classification à 3 classes. On observe un dataset d'entraînement $\mathcal{D} := \left\{ (X_1, Y_1), \dots, (X_n, Y_n)\right\}$ avec $n = 39$, où les points $X_i$ sont les données et $Y_i$ est le label associé à $X_i$. \\ Les $X_i$ appartiennent à l'espace de feature $\mathcal X = \mathbb R^p$ avec $p = \dots $ , tandis que les labels $Y_i$ sont dans $\mathcal Y = \left\{1, 2, 3\right\}$. Dans un premier temps nous omettons le fait que les features sont distribuées selon deux blocs distincts. \\
+On suppose les $(X_i, Y_i)$ i.i.d. distribués selon une loi inconnue $\mathbb P$. \\
+On appelle classifieur une fonction $f  : \mathcal X \to \mathcal Y$. Une fonction de loss est une fonction $\ell : \mathcal Y^2 \to \mathbb R$. On appelle le risque d'un classifieur $f$ selon la loss $\ell$ la quantité
+$$\mathcal R(f) := \mathbb E_{(X, Y) \sim \mathbb P} \big[ \ell \big(f(X), Y\big)\big]$$
+Cette quantité est inconnue. En pratique, on divise le dataset $\mathcal D$ en :
+\begin{itemize}
+    \item Un ensemble d'entraînement $(\simeq 80\%$ de l'ensemble$)$ utilisé pour déterminer le prédicteur $f$
+    \item Un ensemble de test $\mathcal{D}'_m = \left\{ (X_1', Y_1'), \dots, (X_m', Y_m')\right\}$ est utilisé pour estimer le risque via la loi forte des grands nombres
+\end{itemize}
+$$\dfrac{1}{m}\sum_{i=1}^m\ell(f(X_i'), Y_i') \underset{m \to +\infty }{\longrightarrow} \mathcal{R}(f) \text{ p.s.}$$
+
+Enfin, on appelle prédicteur bayésien
+$$f^* = \underset{f}{\text{argmin }} \mathcal R(f)$$
+Et on note $\mathcal R^* = \mathcal R(f^*)$. \\
+
+Pour une classe $c \in \mathcal Y$, on définit la probabilité conditionnelle pour chaque classe $c$ :
+$$\eta_c(x)  = \mathbb P[Y = c |X = x]$$
+Sous la fonction de loss 0-1, $\ell(y, y') = \mathbf 1_{y \ne y'}$, le risque devient alors le taux d'erreur de classification, et on a :
+$$f^*(x) = \underset{c \in \mathcal Y}{\text{argmax }} \eta_c(x)$$
+
+En effet : soit un classifieur $f$. Sous la 0-1 loss, le risque s'écrit
+$$\mathcal R(f) = \mathbb E_{(X, Y)}\big[\ell(f(X), Y)\big] = \mathbb E_{(X, Y)}[\mathbf 1_{f(X) \ne Y}]$$
+$$= \mathbb E_{X}\bigg[ \mathbb E _{Y | X} \big[ \mathbf 1_{f(X) \ne Y}\big] \bigg]$$
+$$= \mathbb E_X \big[ \mathbb P [f(X) \ne Y | X ]\big]$$
+Puisque $\mathbb P \geqslant 0$, il suffit de minimiser le terme à l'intérieur de l'espérance pour chaque observation $x \in \mathcal{X}$ fixée. Pour un $x$ donné, on note $\hat y = f(x)$ la classe prédite. La probabilité d'erreur est
+$$\mathbb P[\hat y \ne Y | X = x] = 1 - \mathbb P[\hat y = Y | X = x]$$
+On doit alors maximiser $\mathbb P[\hat y = Y | X = x]$, d'où le résultat. \\
+
+\textbf{Remarque} : ce résultat est spécifique à la 0-1 loss. Sous une loss asymétrique (par exemple pour pénaliser davantage la mauvaise classification de \texttt{midl}), le prédicteur bayésien ne s'écrirait plus comme l'argmax des $\eta_c$.
+
+
+\subsection{Régression logistique multiclasse\texorpdfstring{\protect\footnote{Cette section s'appuie sur les cours de machine learning théorique et d'optimisation, ENSAE.}}{}}
+\label{sec:logreg}
+
+Sous la fonction de loss $0$-$1$, le prédicteur bayésien s'écrit :
+$$f^*(x) = \text{argmax}_{c \in \mathcal{Y}} \eta_c(x), \quad \text{où } \eta_c(x) = \mathbb{P}[Y = c | X = x]$$
+
+Cependant, la $0$-$1$ loss n'étant ni continue ni dérivable, la minimisation directe de son risque empirique est un problème NP-difficile. Pour contourner cette difficulté, la régression logistique multinomiale utilise une fonction de perte de substitution convexe et dérivable : la cross-entropy.
+
+Dans le modèle logistique, on suppose que $\eta_c$ peut s'écrire, pour toute classe $c$ :
+$$\eta_c^\beta(x) = \mathbb P_\beta[ Y = c| X =x ] = \dfrac{e^{\beta_c^T x}}{\sum_{k=1}^3e^{\beta_k^Tx}}$$
+avec $\beta  = (\beta_1, \beta_2, \beta_3) \in \mathbb R^{p \times 3}$ et une matrice de paramètres.
+
+Le modèle statistique ci-dessus est sur-paramétré (donc non identifiable) : en remplaçant $\beta_c$ par $\beta_c + \gamma$ pour tout $c \in \mathcal Y$ et $\gamma \in \mathbb R^p$, alors les probabilités $\eta_c^\beta(x)$ ne changent pas. Pour lever cette «~ambiguité~», on fixe conventionnellement $\beta_3 = 0$.
+
+Les observations étant i.i.d., la vraisemblance du modèle s'écrit :
+$$\mathcal{L}(\beta) = \prod_{i=1}^n \prod_{c=1}^3 (\eta_c^\beta(X_i))^{\mathbf{1}_{Y_i=c}}$$
+En passant au logarithme, la log-vraisemblance $\ell(\beta)$ devient :
+$$\ell(\beta) = \sum_{i=1}^n \underbrace{\left( \beta_{Y_i}^T X_i - \log\left(\sum_{k=1}^3 e^{\beta_k^T X_i}\right) \right)}_{:= \ell_i(\beta)}$$
+
+Maximiser cette log-vraisemblance revient très exactement à minimiser la cross-entropy empirique. Le risque empirique que nous cherchons à minimiser s'écrit donc :
+$$\hat{R}_n(\beta) = -\frac{1}{n} \sum_{i=1}^n \log \eta_{Y_i}^\beta(X_i)$$
+La fonction $\beta \mapsto \hat{R}_n(\beta)$ est convexe et différentiable : très pratique pour l'optimisation.
+
+\subsubsection{Vraisemblance pondérée et choix des poids de classe}
+\label{sec:weights}
+
+Le risque empirique $\hat R_n$ ci-dessus accorde le même poids $1/n$ à chaque patient. Or, comme l'analyse exploratoire l'a montré (§\ref{sec:eda}), les classes sont déséquilibrées : la classe \texttt{midl} ne représente que $n_{\text{midl}}/n = 8/39 \simeq 20{,}5\%$ de l'entraînement. Minimiser $\hat R_n$ revient alors à minimiser une erreur dominée par les classes majoritaires, et la solution triviale qui ignore \texttt{midl} obtient déjà une faible perte. Pour aligner l'objectif d'apprentissage sur la métrique d'évaluation (la balanced accuracy, qui pondère les classes également), nous introduisons une \textbf{log-vraisemblance pondérée} :
+$$
+    \hat{R}_n^{\,w}(\beta) \;=\; -\frac{1}{n} \sum_{i=1}^n w_{Y_i}\,\log \eta_{Y_i}^\beta(X_i),
+$$
+où chaque observation reçoit un poids $w_{Y_i} > 0$ qui ne dépend que de sa classe.
+
+\paragraph{Dérivation du poids inverse de prévalence.}
+On souhaite que la contribution cumulée de chaque classe au risque soit identique, quelle que soit sa taille. La classe $c$ regroupe $n_c$ patients, dont chacun pèse $w_c$ ; sa contribution totale est donc proportionnelle à $w_c\, n_c$. Imposer l'égalité des contributions entre les $K$ classes,
+$$
+    w_c\, n_c \;=\; \text{constante} \quad \forall c,
+$$
+puis normaliser de sorte que le poids moyen vaille $1$ (i.e. $\sum_c w_c\, n_c = n$, ce qui préserve l'échelle globale du risque), conduit à
+$$
+    \boxed{\,w_c \;=\; \frac{n}{K\, n_c}\,}.
+$$
+On retrouve exactement les valeurs annoncées dans l'EDA :
+$$
+    w_{\text{cort}} = \frac{39}{3 \times 15} = 0{,}87,\qquad
+    w_{\text{dipg}} = \frac{39}{3 \times 16} = 0{,}81,\qquad
+    w_{\text{midl}} = \frac{39}{3 \times 8} = 1{,}62.
+$$
+Chaque patient \texttt{midl} pèse ainsi $\simeq 1{,}6$ fois un patient « moyen », et environ deux fois un patient \texttt{dipg}. Ce schéma est celui appelé \texttt{class\_weight="balanced"} dans la plupart des bibliothèques, et il revient à pondérer la log-vraisemblance par l'inverse de la fréquence empirique de la classe.
+
+\paragraph{Interprétation.}
+Trois lectures équivalentes éclairent ce choix. (i) Ré-échantillonnage implicite : pondérer la classe $c$ par $w_c \propto 1/n_c$ équivaut, en espérance, à ré-échantillonner les données jusqu'à équilibrer les effectifs, mais sans dupliquer ni créer d'observation. (ii) Correction de la prévalence : si la prévalence d'entraînement diffère de la prévalence cible (ici uniforme, puisque la balanced accuracy traite les classes à parité), la pondération corrige ce décalage dans la vraisemblance. (iii) Cohérence objectif/métrique : le gradient pondéré
+$$
+    \nabla_{\beta_c} \hat{R}_n^{\,w}(\beta) = \frac{1}{n} \sum_{i=1}^n w_{Y_i}\left( \eta_c^\beta(X_i) - \mathbf{1}_{\{Y_i = c\}} \right) X_i
+$$
+amplifie d'un facteur $w_{\text{midl}}$ les résidus des patients \texttt{midl}, forçant le modèle à ne plus les négliger. La pondération laisse le problème convexe et différentiable : elle ne change donc rien aux propriétés d'optimisation, seulement le point optimal visé.
+
+\paragraph{Combinaison avec la régularisation.}
+Les poids agissent sur le terme d'attache aux données ; ils se composent sans difficulté avec la pénalité Elastic-Net introduite plus loin, l'objectif complet devenant $\hat{R}_n^{\,w}(\beta) + \lambda\,\mathrm{pen}(\beta)$. En pratique, dans les pipelines reposant sur \texttt{glmnet}, ces poids sont passés via l'argument \texttt{weights} (poids par observation $w_{Y_i}$), tandis que la pénalité reste pilotée par $\lambda$ et $\alpha$.
+
+Pour déterminer le gradient de $\hat R_n$, nous devons calculer les dérivées partielles par rapport à chaque vecteur de paramètres $\beta_c$ (pour $c \in \{1, 2, 3\}$). En utilisant la règle de la chaîne sur la fonction softmax, on obtient :
+$$\nabla_{\beta_c} \ell_i(\beta) = \left( \eta_c^\beta(X_i) - \mathbf{1}_{\{Y_i = c\}} \right) X_i$$
+
+En sommant sur l'ensemble des observations, le gradient complet de notre fonction objectif s'exprime ainsi :
+$$\nabla_{\beta_c} \hat{R}_n(\beta) = \frac{1}{n} \sum_{i=1}^n \left( \eta_c^\beta(X_i) - \mathbf{1}_{\{Y_i = c\}} \right) X_i$$
+
+On remarque que le gradient est proportionnel à l'erreur de prédiction $(\eta_c^\beta(X_i) - \mathbf{1}_{\{Y_i = c\}})$, pondérée par la valeur des variables explicatives $X_i$. Le modèle est calibré lorsque la probabilité moyenne prédite pour chaque classe coïncide exactement avec sa fréquence observée conditionnellement aux features.
+
+Cependant, l'équation $\nabla_{\beta_c} \hat{R}_n(\beta) = 0$ est non linéaire et ne possède pas de solution analytique fermée. Nous devons alors utiliser des algorithmes d'optimisation : descente de gradient, méthode de Newton, etc.
+
+Au lieu d'utiliser une Descente de gradient standard (qui nécessite de calculer la somme sur les $n$ observations à chaque itération), nous privilégions en pratique une Descente de gradient stochastique SGD. À chaque étape $t$, la SGD estime le gradient à partir d'une seule observation tirée au hasard (ou d'un mini-batch), ce qui réduit considérablement le coût de calcul.
+
+L'équation de mise à jour des paramètres à l'itération $t+1$ pour une observation $i$ choisie aléatoirement s'écrit :
+$$\beta_c^{(t+1)} = \beta_c^{(t)} - \gamma_t \nabla_{\beta_c} \ell_i(\beta^{(t)})$$
+$$\beta_c^{(t+1)} = \beta_c^{(t)} - \gamma_t \left( \eta_c^{\beta^{(t)}}(X_i) - \mathbf{1}_{\{Y_i = c\}} \right) X_i$$
+
+Dans cette formulation, $\gamma_t > 0$ est hyperparamètre. Il contrôle la taille du pas effectué dans la direction opposée au gradient. S'il est trop grand, l'algorithme risque de diverger ou d'osciller autour du minimum ; s'il est trop petit, la convergence sera extrêmement lente.
+
+Une fois l'algorithme convergé (minimum atteint ou alors critère d'arrêt de l'algorithme), nous obtenons la matrice des estimateurs optimaux $\hat{\beta}$. Pour une nouvelle observation $x$ (appartenant à notre ensemble de test $\mathcal{D}'_m$), l'objectif est d'inférer sa classe. Conformément au paragraphe précédent, cette prédiction est donnée par :
+$$\hat{y} = \text{argmax}_{c \in \mathcal{Y}} \eta_c^{\hat{\beta}}(x)$$
+
+En remplaçant les probabilités $\eta_c^{\hat{\beta}}(x)$ :
+$$\hat{y} = \text{argmax}_{c \in \mathcal{Y}} \frac{e^{\hat{\beta}_c^T x}}{\sum_{k=1}^3 e^{\hat{\beta}_k^T x}}$$
+
+Le dénominateur de la fonction softmax est strictement positif et reste constant quelle que soit la classe $c$ évaluée pour un $x$ donné. Par ailleurs, la fonction exponentielle étant strictement croissante, elle conserve l'ordre des valeurs. Par conséquent, déterminer l'argument qui maximise la probabilité revient simplement à déterminer l'argument qui maximise le terme dans l'exponentielle. La prédiction de la classe se réduit alors à la maximisation du score linéaire (ou logit) :
+$$\hat{y} = \text{argmax}_{c \in \{1, 2, 3\}} \big( \hat{\beta}_c^T x \big)$$
+
+Finalement, la frontière de décision finale qui sépare les classes dans l'espace $\mathbb{R}^p$ reste purement linéaire.
+
+
+\subsection{Minimisation du risque empirique pénalisé : Elastic-Net\texorpdfstring{\protect\footnote{Cette section s'appuie sur le cours de statistiques, CentraleSupélec.}}{}}
+
+Pour contrôler la complexité du modèle, et éviter tout régime d'overfitting, nous introduisons une pénalisation dans la fonction objectif :
+$$\min_{f \in \mathcal{F}} \hat{\mathcal{R}}_n(f) + \lambda \times \text{pen}(f)$$
+Le paramètre $\lambda > 0$ gère le compromis entre l'ajustement aux données d'entraînement et la simplicité du modèle.
+
+Dans notre projet, nous appliquons une pénalisation de type Elastic-Net, qui combine de manière convexe deux termes de régularisation :
+\begin{itemize}
+    \item Une régularisation Ridge donnée par la norme $\ell^2$ : le terme $||\beta||_2^2$ limite l'amplitude des coefficients, ce qui est particulièrement efficace en présence de variables explicatives fortement corrélées.
+    \item Une régularisation Lasso donnée par la norme $\ell^1$ : le  terme $||\beta||_1$ induit de la parcimonie (sparsity) en forçant les coefficients des variables les moins pertinentes à être exactement nuls, opérant ainsi une sélection de variables intégrée au modèle.
+\end{itemize}
+
+En paramétrant cet équilibre par $\rho \in [0,1]$, le problème d'optimisation final de notre modèle se formule ainsi
+$$\min_{\beta} \bigg( \hat R_n(\beta) + \lambda \rho ||\beta||_1 + \dfrac{\lambda (1- \rho)||\beta||_2^2}{2}\bigg)$$
+
+Notons un problème : la fonction $\beta \mapsto ||\beta||_1$ n'est pas différentiable partout. La mise à jour de $\beta$ présentée précédemment est donc remplacée par des algorithmes d'optimisation proximale, qui appliquent à chaque itération un opérateur de seuillage doux pour forcer l'annulation exacte de certains coefficients.
+
+\subsection{GLM\texorpdfstring{\protect\footnote{Cette section s'appuie sur les cours de Big Data \& Santé (CentraleSupélec) et de machine learning théorique (ENSAE).}}{}}
+
+Un modèle linéaire généralisé (GLM) modélise la loi conditionnelle $Y_i | X_i = x_i$ via trois objets distincts. \\
+On suppose que les $Y_i | X_i = x_i$ suivent une loi de la famille exponentielle, de densité :
+$$f_{Y_i}(y_i | \theta_i, \phi_i) =\exp\bigg( \dfrac{y_i \theta_i - b(\theta_i)}{a(\phi_i)} + c(y_i, \phi_i)\bigg)$$
+où :
+\begin{itemize}
+    \item $\theta_i$ est le paramètre canonique.
+    \item $\phi_i$ est un paramètre de dispersion.
+    \item $a, b, c$ sont des fonctions caractéristiques de la famille.
+\end{itemize}
+On a :
+$$\mathbb E[Y_i | X_i= x_i] = b'(\theta) := \mu$$
+Si $b$ est monotone (c'est le cas en pratique) :  $\theta = g(\mu)$ avec $g$ appelée la fonction de lien canonique.
+$$\text{Var}(Y_i | X_i = x) = b''(\theta)a(\phi) = V(\mu)a(\phi)$$
+La variance n'est donc pas un paramètre libre : elle est dictée par la moyenne via la fonction  $V$.
+
+
+\textbf{Hypothèse} : on suppose que l'effet de $x$ sur la loi de $Y$ passe uniquement par une combinaison linéaire de ses composantes :
+$$g(\mu_i) = x_i^T \beta := \eta$$
+où $\beta \in \mathbb R^p$ est un paramètre à estimer. \\
+La fonction de lien $g$ est une bijection monotone qui relie la moyenne $\mu$ au prédicteur linéaire $\eta$ :
+$$\mu_i= g^{-1}(x_i^T \beta)$$
+Par défaut, on choisit $g$ de sorte que $\eta = \theta$, pour la concavité. On parle de lien canonique. On notera :
+\begin{itemize}
+    \item En régression linéaire avec lien identité, $\mu = \eta = X^T \beta$ et donc la prédiction est égale au prédicteur linéaire
+    \item Cependant, dès qu'on quitte le modèle gaussien, les objets se séparent :
+\end{itemize}
+
+$$\eta = X^T \beta \overset{g^{-1}}{\longrightarrow} \mu = g^{-1}(\eta) = \text{ prédiction du modèle}$$
+\begin{itemize}
+    \item La régression logistique est l'exemple canonique de GLM avec lien non-trivial.
+\end{itemize}
+
+Développons le dernier point. Plaçons nous dans le cas $K = 2$ classes pour le moment. \\
+On suppose que $Y  | X = x \sim \mathcal B(\mu(x))$ avec $\mu(x) = \mathbb P[Y = 1| X =x ] = \mathbb E[Y | X = x]\in (0,1)$. La densité s'écrit :
+$$f_Y(y | x) =\mu(x)^y(1- \mu(x))^{1-y} = \exp\bigg(y\underbrace{\log \dfrac{\mu(x)}{1- \mu(x)}}_{:= \theta(x)} + \underbrace{\log (1- \mu)}_{= -b(\theta(x))} \bigg)$$
+C'est une famille exponentielle avec :
+\begin{itemize}
+    \item Paramètre canonique $\theta(x) = \log \dfrac{\mu(x)}{1+ \mu(x)}$ (on notera également $\theta_x$).
+    \item $b(\theta_x) = \log(1 + e^{\theta_x})$
+    \item $a(\phi) = 1$ (pas de dispersion)
+\end{itemize}
+On vérifie bien que $\mathbb E[Y | X = x] = b'(\theta_x) = \dfrac{e^{\theta_x}}{1 + e^{\theta_x}} = \mu$ et $\text{Var}(Y | X =x)=b''(\theta_x)= \mu(x)(1- \mu(x))$. \\
+
+On postule la linéarité au niveau du paramètre canonique :
+$$\theta(x) = \eta(x) = x^T \beta$$
+On a alors :
+$$\log \dfrac{\mu(x)}{1- \mu(x)} = \eta(x) = x^T\beta$$
+On obtient un lien logit : $\text{logit}(\mu(x)) = x^T\beta$. En inversant :
+$$\mu(x) =  \dfrac{1}{1+e^{-\eta}} = \sigma(x^T \beta)$$
+avec $\sigma$ la sigmoide. On retrouve exactement la formule de la régression logistique binaire.La log-vraisemblance étant strictement concave en $\eta$ (et donc en $\beta$), l'estimateur du maximum de vraisemblance est unique et calculable par méthode de Newton. \\
+Dans le cas $K \geqslant 2$ classes, il faut pousser encore un peu. On suppose que $Y | X =x $ suit une loi catégorielle $\text{Cat}(\mu_1(x), \dots, \mu_K(x))$ avec $\displaystyle \sum_{c=1}^K \mu_c = 1$, de densité :
+$$f_Y(y | x) = \prod_{c=1}^K\mu_c(x)^{\mathbf 1_{y = c}}$$
+En vectorisant $Y$ en one-hot $(Y_1, \dots, Y_K)$ (définition en-dessous) :
+$$f_Y(y | x)= \prod_{c=1}^K\mu_c(x)^{y_c} = \exp\bigg( \sum_{c=1}^{K-1} y_c \underbrace{\log \dfrac{\mu_c(x)}{\mu_K(x)}}_{:= \theta_c(x)} + \log(\mu_K(x))\bigg)$$
+\textbf{Note} : quand $Y \in \left\{1, \dots, K\right\}$ est une variable catégorielle on remplace la valeur scalaire par un vecteur de $\mathbb R^K$ qui contient un seul $1$ (la position de la classe vraie) et $K-1$ zéros. On transforme donc $Y$ en $(0, \dots, 1, \dots, 0)$. \\
+
+On obtient alors une famille exponentielle mais vectorielle : $\theta = (\theta_1, \dots, \theta_K)$. La classe $K$ sert de référence, c'est la même contrainte d'identifiabilité $\beta_K = 0$ expliquée dans la section précédente. \\
+On suppose la linéarité au niveau de chaque coordonnée du paramètre canonique :
+$$\theta_c(x) = \eta_c(x) = x^T\beta_c$$
+D'où la matrice de paramètres $\beta \in \mathbb R^{p \times K}$ avec $\beta_K = 0$. Finalement, on obtient :
+$$\mu_c(x) = \dfrac{e^{x^T\beta_c}}{1 + \sum_{c'=1}^{K-1} e^{x^T \beta_{c'}}} = \text{softmax}_c(x^T\beta)$$
+où $\text{softmax}_c :z \mapsto \dfrac{e^{z_c}}{\sum_{k=1}^Ke^{z_k}}$\\
+On retombe alors sur le cadre de la section précédente.
+
+
+\subsection{Linear Discriminant Analysis (LDA)}
+
+On rappelle que le classifieur bayésien est celui qui maximise la probabilité a posteriori
+$$f^*(x) = \underset{c \in \mathcal Y}{\text{argmax }} \mathbb P[Y =c | X= x]$$
+On peut réécrire cette probabilité :
+$$\mathbb P[Y = c| X=x ] = \dfrac{\mathbb P[X = x | Y = c] \mathbb P[Y = c]}{\mathbb P[X = k]}$$
+Et alors :
+$$f^*(x) = \underset{c \in \mathcal Y}{\text{argmax}}\big( \pi_c f_c(x)\big)$$
+où $\pi_c = \mathbb P[Y =c]$ est la probabilité a priori de la classe $c$, et $X | Y = c \sim P_c$ tel que $dP_c = f_c d\lambda ^{(p)}$.  \\
+Les hypothèses du formalisme LDA sont les suivantes :
+\begin{itemize}
+    \item Normalité : Conditionnellement à la classe $c$, les données suivent une loi normale multivariée en dimension $p$
+\end{itemize}
+$$X | Y = c \sim \mathcal N_p(\mu_p, \Sigma_p)$$
+\begin{itemize}
+    \item Homoscédasticité :
+\end{itemize}
+
+$$\forall c \in \mathcal Y, \hspace{0.1cm} \Sigma_c = \Sigma$$
+Posons $\delta_c (x) = \log(\pi_c f_c(x)) = \log \pi_c + \log f_c(x)$. En injectant la densité gaussienne :
+$$\delta_c(x) = \log(\pi_c) - \frac{d}{2}\log(2\pi) - \frac{1}{2}\log(\det \Sigma) - \frac{1}{2} (x - \mu_c)^T \Sigma^{-1} (x - \mu_c)$$
+Le terme quadratique se développe, par symétrie de $\Sigma$ :
+$$(x- \mu_c)^T \Sigma^{-1}(x- \mu_c) =  x^T \Sigma^{-1} x + \mu_c^T \Sigma^{-1} \mu_c - 2x^T\Sigma^{-1}\mu_c$$
+Et alors
+$$\delta_c(x) = -\frac{1}{2} x^T \Sigma^{-1} x + x^T \Sigma^{-1} \mu_c - \frac{1}{2} \mu_c^T \Sigma^{-1} \mu_c + \log(\pi_c) + \text{constantes indépendantes de } c$$
+On peut ignorer les termes ne dépendant pas de $c$ :
+$$\delta_c(x) = \underbrace{( \Sigma^{-1} \mu_c )^T}_{\mathbf{w}_c^T} x \underbrace{- \frac{1}{2} \mu_c^T \Sigma^{-1} \mu_c+ \log(\pi_c)}_{b_c}$$
+La fonction discriminante équivalente devient strictement linéaire en $x$ ! La règle de décision finale est donc un hyperplan :
+$$f^*(x) = \underset{c \in \mathcal Y}{\text{argmax}}\big(\textbf{w}_c^T x - b_c\big)$$
+À présent, soit $n_c = \displaystyle \sum_{i=1}^n \mathbf 1_{Y_i = c}$ le nombre d'observations de la classe $c$. On estime les paramètres inconnus $(\pi_c, \mu_c, \Sigma)$ :
+$$\hat \pi_c = \dfrac{n_c}{n}$$
+$$\hat \mu_c = \dfrac{1}{n_c}\sum_{i=1}^n X_i \mathbf 1_{Y_i = c}$$
+$$\hat \Sigma = \dfrac{1}{n-3}\sum_{c=1}^3 \sum_{i=1}^n \big( X_i - \hat \mu_c\big)\big( X_i - \hat \mu_c\big)^T \mathbf 1_{Y_i = c}$$
+Note sur la covariance : Grâce à l'hypothèse d'homoscédasticité, on cherche une unique matrice commune à toutes les classes à partir de tout le jeu de données. Si on isole la classe $c$, la dispersion des données autour de leur moyenne de classe $\hat \mu_c$ est capturée par la matrice des sommes des carrés $\displaystyle S_c = \sum_{i=1}^n (X_i - \hat \mu_c)(X_i - \hat \mu_c)^T \mathbf 1_{Y_i = c}$. Puisque la covariance est supposée identique dans chaque classe, on additionne simplement toutes ces matrices de dispersions pour obtenir le résultat. Pour obtenir l'estimateur final, on normalise en divisant par $n - K$ ($K = 3$) pour obtenir un estimateur non-biaisé (sinon, on peut aussi prendre l'estimateur du maximum de vraisemblance en divisant simplement par $n$ mais l'estimateur est biaisé)
+
+On remplace ensuite les vrais paramètres par leurs estimateurs dans l'équation de $\delta_k(x)$ pour obtenir notre classifieur entraîné $f(x)$.
+
+\newpage
+
+\subsection{Cross-Validation}
+
+La taille modeste de notre ensemble d'entraînement ($n=39$) interdit tout estimateur naïf du risque par split unique. Nous recourrons donc à une validation croisée stratifiée répétée, complétée par une CV imbriquée pour la sélection d'hyperparamètres.
+
+\paragraph{$K$-fold cross-validation.}
+Soit $\mathcal{D} = \{(X_i, Y_i)\}_{i=1}^{n}$ l'ensemble d'entraînement et $\mathcal{A}$ un algorithme d'apprentissage paramétré par un hyperparamètre $\theta$. On partitionne $\{1,\dots,n\}$ en $K$ sous-ensembles disjoints $\mathcal{F}_1, \dots, \mathcal{F}_K$ de tailles simeqimativement égales. Pour chaque pli $k$, on entraîne $\hat f^{(-k)}_\theta := \mathcal{A}(\mathcal{D}
+    \setminus \mathcal{F}_k,\, \theta)$ sur les $K-1$ autres folds, puis on évalue sur $\mathcal{F}_k$. L'estimateur CV du risque s'écrit :
+\[
+    \widehat{\mathcal{R}}_{\mathrm{CV}}(\theta)
+    \;=\;
+    \frac{1}{K}\sum_{k=1}^{K}
+    \frac{1}{|\mathcal{F}_k|}\sum_{i \in \mathcal{F}_k}
+    \ell\!\left(\hat f^{(-k)}_\theta(X_i),\, Y_i\right).
+\]
+
+\paragraph{Stratification.}
+La rareté de la classe \texttt{midl} ($n_{\text{midl}} = 8$, soit à peine $20\%$ du train) impose une stratification : on construit les plis de telle sorte que chaque $\mathcal{F}_k$ préserve la distribution empirique des classes,
+\[
+    \forall k \in \{1,\dots,K\},\;\; \forall c \in \mathcal{Y},\quad
+    \frac{|\{i \in \mathcal{F}_k : Y_i = c\}|}{|\mathcal{F}_k|}
+    \;\simeq\;
+    \frac{n_c}{n}.
+\]
+Sans stratification, certains plis pourraient ne contenir aucun patient \texttt{midl}, rendant l'évaluation locale du risque indéfinie pour cette classe.
+
+\paragraph{Répétitions.}
+Pour réduire la variance de $\widehat{\mathcal{R}}_{\mathrm{CV}}$ liée au tirage particulier des plis, on répète la procédure $R$ fois avec des partitions indépendantes $(\mathcal{F}_k^{(r)})_{k=1}^{K}$, $r=1,\dots,R$, et on moyenne :
+\[
+    \widehat{\mathcal{R}}_{\mathrm{CV}\text{-rep}}(\theta)
+    \;=\;
+    \frac{1}{R  K}\sum_{r=1}^{R}\sum_{k=1}^{K}
+    \frac{1}{|\mathcal{F}_k^{(r)}|}\sum_{i \in \mathcal{F}_k^{(r)}}
+    \ell\!\left(\hat f^{(-k,r)}_\theta(X_i),\, Y_i\right).
+\]
+
+\paragraph{Nested Cross-Validation}
+Certains algorithmes (par exemple \texttt{cv.glmnet}) possèdent eux-mêmes un hyperparamètre interne $\lambda$ qu'il faut estimer à partir des données d'entraînement. Pour éviter tout data leakage entre sélection de $\lambda$ et évaluation du modèle, nous utilisons une CV à deux niveaux :
+\begin{itemize}
+    \item Boucle externe : $K \times R = 21$ plis pour évaluer $\widehat{\mathcal{R}}_{\mathrm{CV}}(\theta_{\text{externe}})$, où
+          $\theta_{\text{externe}}$ désigne les hyperparamètres balayés manuellement.
+    \item Boucle interne : à chaque pli externe, on lance une seconde CV (5 ou 10-fold) sur le sous-ensemble d'entraînement pour sélectionner $\hat\lambda := \arg\min_\lambda
+              \widehat{\mathcal{R}}^{\,\text{int}}(\lambda)$. Le modèle est ensuite  réajusté sur l'ensemble du fold-train avec $\hat\lambda$, puis évalué sur le fold-valid externe.
+\end{itemize}
+
+Cette procédure assure que $\hat\lambda$ ne voit jamais les observations sur lesquelles le modèle sera évalué, pour éviter toute triche du modèle !
+
+\paragraph{Métrique : balanced accuracy.}
+Avec une prévalence de classe très déséquilibrée, l'accuracy brute pondère implicitement les classes par leur fréquence, ce qui masquerait les performances sur \texttt{midl}. On lui préfère alors la balanced accuracy :
+\[
+    \mathrm{BA}(\hat f) \;=\; \frac{1}{|\mathcal{Y}|}\sum_{c \in \mathcal{Y}}
+    \underbrace{\frac{|\{i : Y_i = c \text{ et } \hat f(X_i) = c\}|}
+        {|\{i : Y_i = c\}|}}_{\text{recall}_c(\hat f)}.
+\]
+Cette métrique attribue le même poids aux trois classes, indépendamment de leur prévalence. Cela permet d'ignorer un classifieur qui prédit toujours la classe majoritaire. C'est la métrique qu'on optimise dans toutes les boucles externes et qu'on rapporte dans la section Résultats.
+
+
+\subsection{Méthodologie de fusion de données multiblocs}
+
+Notre jeu de données est divisé en deux blocs très distincts : un bloc d'expression génomique, et un bloc CGH d'altérations chromosomiques. Ces deux blocs sont très distincts et surtout déséquilibrés, le bloc GE représentant plus de $90\%$ des features, il a un avantage structurel. Nous présentons ici plusieurs méthodes de fusions essayées au cours du projet.
+
+Premièrement, notons qu'avant ce paragraphe, nous avons fais abstraction total de ce détail en prenant des observations $X_i \in \mathbb R^p$ avec $p$ non fixé. On définit alors :
+\begin{itemize}
+    \item $X = (X_1, \dots, X_n) \in \mathbb R^{n \times p_2}$ les observations du bloc GE, avec $p_2 = $ $15702$
+    \item $Z = (Z_1, \dots, Z_n) \in \mathbb R^{n \times p_C}$ les observations du bloc CGH, avec $p_1$ = $1229$
+\end{itemize}
+On note $Y  = (Y_1, \dots, Y_n) \in \mathcal Y^n$ la target
+
+
+\subsubsection{Méthodes naïves}
+
+Deux stratégies élémentaires encadrent toutes les autres. La \textbf{fusion précoce} (early fusion) concatène les deux blocs en une seule matrice $[\,X \mid Z\,] \in \mathbb{R}^{n \times (p_2 + p_1)}$, puis applique un unique modèle à l'ensemble. Elle est simple mais souffre du déséquilibre dimensionnel décrit en §\ref{sec:eda} : le bloc GE, qui concentre plus de $90\%$ des variables, domine mécaniquement l'apprentissage et marginalise CGH. La \textbf{fusion tardive} (late fusion) entraîne au contraire un modèle indépendant par bloc, puis agrège leurs prédictions, typiquement par une combinaison convexe $\omega\, f_X(X) + (1-\omega)\, f_Z(Z)$. Elle préserve chaque vue mais introduit un hyperparamètre de pondération $\omega$ à régler et ignore par construction toute interaction entre blocs. Le Cooperative Learning, présenté ci-dessous, se lit précisément comme une interpolation continue entre ces deux extrêmes.
+
+\subsubsection{Cooperative Learning}
+
+Le Cooperative Learning a été introduit par Ding, Tibshirani et collaborateurs (PNAS, 2022) pour l'intégration supervisée de plusieurs vues (multi-omiques notamment). L'idée est de trouver un juste milieu plus intelligent entre fusion précoce et fusion tardive : entraîner les deux modèles $f_X$ et $f_Z$ en même temps, tout en forçant les deux blocs à concorder. On définit alors nos nouveaux classifieurs sous la forme $f(X, Z) = f_X(X) + f_Z(Z)$.
+
+L'article propose, à un hyperparamètre de contrôle $\rho \geqslant 0$ près, de minimiser le risque de population, dans le cas d'une régression avec $\ell = MSE$ :
+$$\mathcal R(f_X, f_Z) = \mathbb E\bigg[ \dfrac{1}{2}(Y - f_X(X) - f_Z(Z))^2 + \dfrac{\rho}{2}(f_X(X) - f_Z(Z)\big)^2\bigg]$$
+On retrouve en fait notre définition du risque de population $\mathbb E(\ell(Y, f(X, Z)))$, auquel s'ajoute une pénalisation «~agreement penalty~» :  on pénalise le modèle si la prédiction issue de la vue $X$ est trop différente de la prédiction issue de la vue $Z$.
+
+L'hyperparamètre $\rho$ contrôle tout :
+\begin{itemize}
+    \item Si $\rho = 0$, aucune pénalité = fusion précoce
+    \item Si $\rho \to +\infty$, l'article montre que la solution est la moyenne des prédictions marginales, ce qui correspond à la fusion tardive
+\end{itemize}
+
+La formulation ci-dessus suppose $\ell = \mathrm{MSE}$ et identifie sans ambiguïté $f_X(X)$ à la prédiction du modèle. En classification multi-classe (dans le cadre des GLM notamment), cette identification est moins immédiate : la prédiction finale est une probabilité $p_c(x) = \mathrm{softmax}_c(X\theta)$ (c.f. section GLM), mais elle n'est qu'une étape après le score linéaire $\eta_c(x) = X^{\!\top}\theta_c$. Il faut donc choisir sur quelle couche appliquer la pénalité d'accord. Sur les logits, $X\theta$ est linéaire en $\theta$ et la pénalité
+\[
+    \mathcal{P}_{\mathrm{accord}}(\theta_x,\theta_z) \;=\;
+    \frac{\rho}{2}\,\|X\theta_x - Z\theta_z\|_F^{2}
+\]
+,avec $||.||_F$ la norme de Frobenius, reste une forme quadratique. On identifie donc dans la suite $f_X(X)$
+à son logit $X\theta_x$ et $f_Z(Z)$ à $Z\theta_z$, généralisation directe du cas régression où la prédiction est déjà le score linéaire.
+
+Une dernière différence avec le cas binaire de l'article original : notre problème compte $K=3$ classes. La régression logistique multinomiale (§\ref{sec:logreg}) requiert non plus un vecteur de
+coefficients mais une matrice $\beta \in \mathbb{R}^{p \times K}$, avec une colonne $\beta_c$ par classe. Le cadre cooperative s'adapte naturellement en remplaçant les vecteurs $\theta_x, \theta_z$ par deux matrices, une par vue.
+
+Nous disposons désormais de deux matrices de paramètres : $\theta_x \in \mathbb{R}^{p_x \times 3}$ pour la vue $X$, et $\theta_z \in \mathbb{R}^{p_z \times 3}$ pour la vue $Z$. Le score pré-softmax pour une observation $i$ et une classe $c$ issu de la première vue est $X_i^T \theta_{x,c}$, et celui issu de la seconde vue est $Z_i^T \theta_{z,c}$.
+
+Le score combiné total est :
+$$\eta_{i,c} = X_i^T \theta_{x,c} + Z_i^T \theta_{z,c}$$
+
+La fonction objectif globale $J(\theta_x, \theta_z)$ que notre modèle cherche à minimiser (le risque empirique pénalisé) se décompose alors en trois termes :
+
+$$J(\theta_x, \theta_z) = \hat{R}_{CE}(\theta_x, \theta_z) + \mathcal{P}_{accord}(\theta_x, \theta_z) + \mathcal{P}_{Elastic-Net}(\theta_x, \theta_z)$$
+
+Le premier terme est l'entropie croisée, conformément aux sections précédentes. \\
+Le terme $\mathcal P_{accord}(\theta_x, \theta_z)$ est une pénalité d'accord, qui force les signaux entre les deux blocs à s'aligner, en minimiser la norme de Frobenius $||.||_F$ de la distance entre les matrices de scores
+$$\mathcal P_{accord}(\theta_x, \theta_z) = \dfrac{\rho}{2}||X\theta_x - Z\theta_z||_F^2$$
+Enfin, une pénalisation Elastic-Net $\mathcal P_{net}$ qui régularise le modèle :
+$$\mathcal{P}_{Elastic-Net}(\theta_x, \theta_z) = \lambda \bigg[ \alpha \big(||\theta_x||_1 + ||\theta_z||_1\big) + \frac{1 - \alpha}{2} \big(||\theta_x||_2^2 + ||\theta_z||_2^2\big) \bigg]$$
+avec $\alpha$ le paramètre de mélange, $\lambda$ le paramètre d'intensité.
+
+\paragraph{Données augmentées}
+
+Une fois la fonction objectif $J(\theta_x, \theta_z)$ formellement définie, la difficulté réside dans son optimisation conjointe. Plutôt que de développer un solveur d'optimisation sur mesure, l'article propose une méthode approche différente.
+
+Dans le cadre des GLM, l'optimisation s'effectue classiquement par la méthode de Newton des moindres carrés repondérés, ou de manière équivalente la méthode de Newton-Raphson. À chaque itération, l'algorithme simeqime la log-vraisemblance par un problème des moindres carrés pondérés, faisant intervenir une matrice de poids diagonale $W$ et un vecteur de variables ajustées $z$.
+
+L'article démontre que la pénalité d'accord peut être parfaitement intégrée à ce processus en construisant, à chaque itération, une matrice augmentée de données $\tilde{X}$ et un vecteur augmenté cible $\tilde{z}$ définis par l'empilement suivant :
+$$\tilde{X} = \begin{pmatrix} W^{1/2}X & W^{1/2}Z \\ -\sqrt{\rho}X & \sqrt{\rho}Z \end{pmatrix}, \quad \tilde{z} = \begin{pmatrix} z \\ 0 \end{pmatrix}, \quad \tilde{\beta} = \begin{pmatrix} \theta_x \\ \theta_z \end{pmatrix}$$
+
+Ainsi, le problème d'optimisation du cooperative learning est équivalent à résoudre un problème elastic-net standard pour le jeu de données augmenté $(\tilde X, \tilde z)$.
+
+\subsection{RGCCA et SGCCA}
+
+L'analyse canonique généralisée régularisée (RGCCA, Tenenhaus \& Tenenhaus 2011 ; Tenenhaus et al. 2017) est un cadre unifié d'analyse multibloc qui cherche des composantes, une par bloc, maximisant un critère d'association entre blocs sous contraintes de norme. Sa variante parcimonieuse, la SGCCA (Sparse Generalized Canonical Correlation Analysis), ajoute une pénalité $\ell^1$ qui force la sélection de variables au sein de chaque bloc, ce qui la rend particulièrement adaptée au régime $p \ggg n$ de notre projet. En incluant le bloc des étiquettes parmi les blocs analysés, la SGCCA fournit une projection supervisée : c'est exactement le levier identifié comme nécessaire à l'issue de l'analyse exploratoire (§\ref{sec:eda}), où la PCA non supervisée échouait à séparer les classes.
+
+\begin{center}
+    \Large \textbf{Formalisme RGCCA-SGCCA}
+\end{center}
+
+On suppose observer des données multiblocs sous forme de $J$ matrices de données $X_1, \dots, X_J$ où $X_j \in \mathbb R^{n \times p_j}$ est un bloc de $p_j$ variables observées sur le même ensemble de $n$ individus. On supposera les variables centrées. \\
+
+L'objectif est de trouver un vecteur de poids de bloc $a_j = (a_{j,1}, \dots, a_{j, p_j})^T$ tel que :
+\begin{itemize}
+    \item $y_j = X_ja_j$ expliquent bien leur propre bloc
+    \item Les composantes de blocs connectées sont fortement corrélées.
+\end{itemize}
+
+Cela revient à résoudre le problème d'optimisation :
+\[ \max_{a_1, \dots, a_J} \sum_{j, k=1}^J c_{j,k} g\big( \text{cov}(X_ja_j, X_ka_k)\big) \tag{1}\]
+où $a_j \in \Omega_j$ et :
+\begin{itemize}
+    \item $\Omega_j$ est un compact à définir
+    \item $g$ une fonction convexe continuement différentiable
+    \item Matrice de connexion $C = (c_{j,k})_{1 \leqslant j, k \leqslant J}$ est une matrice symétrique décrivant le réseau de connexions entre les blocs. Habituellement, $c_{j,k} = 1$ si les blocs sont connectés, $0$ sinon.
+\end{itemize}
+
+La résolution du problème $(1)$ donne un ensemble de $J$ vecteurs $a_{j}^{(1)}$ où $a_j^{(1)}$ quantifie la contribution des variables du bloc $X_j$ à la construction des composantes de blocs $y_j^{(1)} = X_ja_j^{(1)}$.
+
+\newpage
+\begin{center}
+    \Large \textbf{SGCCA : Sparse Generalized Canonical Correlation Analysis}
+\end{center}
+
+\textbf{Objectif} : identifier au sein de chaque bloc les sous-ensembles de variables significatives qui sont les plus pertinentes pour les relations entre les blocs. Le but est donc de \textbf{sélectionner} des variables (très important au vu de la dimensionnalité de notre projet). À cette fin, on utilise la pénalisation $\ell^1$ en choisissant :
+$$\Omega_j = \left\{ a_j \in \mathbb R^{p_j} : ||a_j||_2^2 \leqslant 1 \text{ et } ||a_j||_1 \leqslant s_j \right\}$$
+où $s_j>0$ est un hyperparamètre. Plus $s_j$ est petit, plus le degré de parcimonie («~sparsité~») de $a_j$ est grand.  La géométrie de la boule $\ell^1$ explique le mécanisme : le simplexe $\{a \in \mathbb{R}^{p_j} : \|a\|_1 \leqslant s_j\}$ est un polytope dont les sommets sont les axes canoniques mis à l'échelle. Plus $s_j$ est petit, plus ces sommets sont rapprochés de l'origine et plus la solution optimale du problème $(1)$, qui maximise une fonction lisse sous contrainte, tend à venir s'aligner sur une face de basse dimension, c'est-à-dire à annuler un grand nombre de coordonnées de $a_j$.
+
+Pour garantir un domaine non vide, l'article impose $\frac{1}{\sqrt{p_j}} \leqslant s_j \leqslant 1$. La borne inférieure découle de l'inégalité de Cauchy-Schwarz : pour tout $a_j$ vérifiant $\|a_j\|_2 \leqslant 1$, on a $\|a_j\|_1 \leqslant \sqrt{p_j}\,\|a_j\|_2
+    \leqslant \sqrt{p_j}$, et le rapport $\|a_j\|_1 / \|a_j\|_2$ est minoré par $1$ (atteint sur les sommets canoniques). Choisir $s_j < 1/\sqrt{p_j}$ rendrait $\Omega_j$ vide.
+
+
+\begin{center}
+    \Large \textbf{Algorithme}
+\end{center}
+
+Reprenons le problème $(1)$. On note $f$ la fonction objectif du problème. Soit $a = (a_1, \dots, a_J)$. On suppose que $\nabla_jf(a) \ne 0$ (hypothèse pas déconnante, car $\nabla_j f(a) = 0$ caractérise précisemment les extrêmas de $f$, et donc si égalité est satisfaite, alors pas besoin de passer par l'algorithme...). \\
+
+Puisque $f$ est $C^1$ multi-convexe, on a, pour $\tilde a_j \in \Omega_j$ :
+$$f(a_1, \dots, a_{j-1}, \tilde a_j, a_{j+1}, \dots, a_J) \geqslant f(a) + \nabla_jf(a)^T\big( \tilde a_j - a_j\big)$$
+On cherche donc $\hat a_j = \underset{\tilde a_j \in \Omega_j}{\text{argmax }}\nabla_jf(a)^T(\tilde a_j - a_j) = r_j(a)$.
+
+Algorithme 1 Tenenhaus et al. 2017.
+
+
+\begin{algorithm}[H]
+    \caption{Block relaxation pour le problème (1)}
+    \label{alg:rgcca}
+    \KwIn{matrices $X_1, \dots, X_J$, matrice de connexion $C$,
+        fonction $g$, contraintes $\Omega_j$, tolérance $\varepsilon > 0$}
+    \KwOut{$\mathbf{a}_1^*, \dots, \mathbf{a}_J^*$ solution approchée de $(1)$}
+
+    \textbf{Initialisation :} choisir $\mathbf{a}_j^{0} \in \Omega_j$ au hasard
+    pour $j = 1, \dots, J$\;
+    $s \leftarrow 0$\;
+
+    \Repeat{$\bigl|\,f(\mathbf{a}_1^{s+1}, \dots, \mathbf{a}_J^{s+1})
+            - f(\mathbf{a}_1^{s}, \dots, \mathbf{a}_J^{s})\bigr| < \varepsilon$}{
+        \For{$j = 1$ \KwTo $J$}{
+            $\mathbf{a}_j^{s+1} \leftarrow r_j\!\left(
+                \mathbf{a}_1^{s+1}, \dots, \mathbf{a}_{j-1}^{s+1},
+                \mathbf{a}_j^{s}, \dots, \mathbf{a}_J^{s}\right)$\;
+        }
+        $s \leftarrow s + 1$\;
+    }
+\end{algorithm}
+
+À chaque itération, l'algorithme met à jour les blocs l'un après l'autre (cyclic block coordinate ascent, De~Leeuw 1994) en remplaçant chaque $\mathbf{a}_j$ par le maximiseur $r_j(\mathbf{a})$ de la minorante linéaire de $f$ en $\mathbf{a}_j$. La fonction $f$ étant continûment différentiable et multi-convexe sur le compact $\Omega_1 \times \cdots \times \Omega_J$,
+la suite $(f(\mathbf{a}^s))_{s \geqslant 0}$ est croissante et majorée, donc convergente ; le point de convergence est un point stationnaire de $f$ (Tenenhaus et al. 2017, théorème 1).
+
+
+
+On trouve finalement,
+$$r_j(a) = \dfrac{S(\nabla_j f(a), \lambda_j)}{||S(\nabla_jf(a), \lambda_j)||_2}$$
+
+Où $\mathcal S$ est un opérateur de soft-tresholding, $\lambda_j$ est un seuil.
+
+
+\begin{comment}
+\paragraph{Opérateur de soft-thresholding $\mathcal{S}$.}
+Pour un vecteur $v = (v_1, \dots, v_p)^{\!\top} \in \mathbb{R}^p$ et un seuil $\lambda \geqslant 0$, l'opérateur de soft-thresholding agit
+coordonnée par coordonnée :
+\[
+    \bigl(\mathcal{S}(v, \lambda)\bigr)_i
+    \;:=\; \operatorname{sign}(v_i)\,\bigl(|v_i| - \lambda\bigr)_{+}
+    \;=\;
+    \begin{cases}
+        v_i - \lambda & \text{si } v_i > \lambda,           \\
+        0             & \text{si } |v_i| \leqslant \lambda, \\
+        v_i + \lambda & \text{si } v_i < -\lambda.
+    \end{cases}
+\]
+C'est le proximal de la norme $\ell^1$ : $\mathcal{S}(v, \lambda) =
+    \arg\min_{u \in \mathbb{R}^p}\, \tfrac{1}{2}\|u - v\|_2^2 + \lambda\|u\|_1$. Toutes les coordonnées de $v$ dont la valeur absolue tombe sous $\lambda$ sont annulées exactement, ce qui réalise la sélection de variables.
+
+\textbf{Note} : Pour une fonction $g : \mathbb R^p \to \mathbb R$, l'opérateur proximal $\text{prox}_g : \mathbb R^p \to \mathbb R$ est défini par :
+$$\operatorname{prox}_g(v) = \arg\min_{u \in \mathbb{R}^p} \left\{ \frac{1}{2}\|u - v\|_2^2 + g(u) \right\}$$
+On remarque deux termes :
+\begin{itemize}
+    \item Terme de proximité $||u-v||_2^2$ : pénalise l'éloignement. Même concept que la projection orthogonale.
+    \item $g(u)$ : terme de régularisation qui pousse $u$ à minimiser la fonction $g$.
+\end{itemize}
+Le proximal est donc un équilibre entre projection sur $v$ et minimisation de $g$. Dans le cas ci-dessus, $g(u) = \lambda ||u||_1$. L'intérêt est que le problème d'optimisation global se sépare coordonnée par coordonnée : l'objectif $\tfrac{1}{2}\|u - v\|_2^2 + \lambda\|u\|_1 = \sum_i \big[\tfrac{1}{2}(u_i - v_i)^2 + \lambda|u_i|\big]$ est une somme de termes indépendants en chaque $u_i$, que l'on minimise donc séparément, ce qui redonne exactement le seuillage doux ci-dessus.
+
+\end{comment}
+
+\paragraph{Choix du seuil $\lambda_j$.}
+Le paramètre $\lambda_j$ joue le rôle de multiplicateur de Lagrange associé à la contrainte $\|a_j\|_1 \leqslant s_j$. Sa valeur est
+déterminée par la situation de cette contrainte à l'optimum :
+\[
+    \lambda_j \;=\;
+    \begin{cases}
+        0                                           & \text{si } \dfrac{\|\nabla_j f(\mathbf{a})\|_1}{\|\nabla_j f(\mathbf{a})\|_2}
+        \;\leqslant\; s_j,                                                                                                          \\[1.2em]
+        \text{tel que } \|r_j(\mathbf{a})\|_1 = s_j & \text{sinon.}
+    \end{cases}
+\]
+
+On a alors, par le KKT : $\lambda_j \bigg(\dfrac{||\nabla_j f(a)||_1}{||\nabla_j f(a)||_2} - s_j\bigg) = 0$
+\begin{itemize}
+    \item Si la contrainte $\ell^1$ est inactive, alors aucun seuillage n'est nécessaire, et $\lambda_j = 0$
+    \item Si la contrainte $\ell^1$ est active, alors on cherche le plus petit $\lambda_j$ saturant la contrainte $||r_j(a)||_1 = s_j$. Ce $\lambda_j$ est unique et se calcule soit par recherche binaire, soit par l'approche analytique de Gloaguen et al. (2017).\footnote{Nous n'avons pas creusé le détail de ce calcul de seuil et avons utilisé l'implémentation du package \texttt{RGCCA} telle quelle.}
+\end{itemize}
+
+
+\begin{center}
+    \Large \textbf{Application à notre problème}
+\end{center}
+
+On dispose de trois blocs :
+\begin{itemize}
+    \item $X = X_1$ : $p_1 = 15702$ gènes du bloc (GE)
+    \item $Z = X_2$ : $p_2 = 1229$ segments de chromosomes du bloc (CGH)
+    \item $X_3$ : $p_3 = 1$ variables indicatrices de localisation ($y_{\text{train}}$)
+\end{itemize}
+
+L'idée est de réduire les blocs $X_j$ en composantes de blocs $y_j = X_ja_j$. \\
+On commence par standardiser :
+$$z_{i,k} = \dfrac{x_{i,k} - \mu_k}{\sigma_k}$$
+pour chaque blocs. Puisqu'on a standardiser, la variance de chaque variable vaut $1$, et donc $\text{Var}(X_j)$ contient une diagonale de $1$. Ainsi, la somme des valeurs propres de la matrice de covariances vaut $p_j$ $\longrightarrow$ une inertie de $p_j$, ce qui créer un déséquilibre. On met alors à l'échelle :
+$$\tilde {X_j} = \dfrac{1}{\sqrt{p_j}}X_j$$
+De sorte que $\text{Tr}(\tilde{X_j}^TX_j) = 1$
+
+En pratique, le prétraitement appliqué en amont de la SGCCA est le suivant : imputation des valeurs manquantes par la médiane calculée sur l'ensemble d'entraînement (puis reportée sur le test, sans fuite d'information), standardisation $z$-score variable par variable, et mise à l'échelle par bloc $\tilde X_j = X_j/\sqrt{p_j}$ décrite ci-dessus afin d'égaliser l'inertie des blocs. Les composantes de bloc issues de la SGCCA alimentent ensuite une analyse discriminante linéaire (LDA) : la LDA opère ainsi dans l'espace réduit à quelques composantes supervisées, et non sur les $p \simeq 17\,000$ variables initiales, ce qui contourne la non-inversibilité de la matrice de covariance en régime $p \ggg n$. Les performances correspondantes sont rapportées dans la section Résultats.
+
+\section{Résultats}
+\label{sec:resultats}
+
+\subsection{Sélection de variables}
+
+\begin{center}
+    \Large \textbf{SGCCA}
+\end{center}
+
+L'application de la SGCCA à notre modèle a permis de retenir :
+\begin{itemize}
+    \item 68 variables du bloc GE
+    \item 11 variables du bloc CGH
+\end{itemize}
+Ces variables ont été sélectionnées comme celles dont la coordonnée correspondante dans les vecteurs de poids $a_{\text{GE}}^{(1)}$ et $a_{\text{CGH}}^{(1)}$ est non nulle à l'issue de l'algorithme.
+
+On rappelle le problème d'optimisation : Soit $J = 3$ blocs : $X_1 = X_{\text{GE}} \in \mathbb{R}^{n \times p_1}$ ($p_1 = 15\,702$), $X_2 = X_{\text{CGH}} \in \mathbb{R}^{n \times p_2}$ ($p_2 = 1\,229$), et $X_3 = Y \in \{0,1\}^{n \times 3}$. \\
+La matrice de connexion est :
+
+$$
+    C =
+    \begin{pmatrix}
+        0 & 0 & 1 \\
+        0 & 0 & 1 \\
+        1 & 1 & 0
+    \end{pmatrix}
+    \begin{matrix}
+        \text{(GE)} \\ \text{(CGH)} \\ (y)
+    \end{matrix}
+$$
+
+
+Ce choix encode l'hypothèse suivante : on ne cherche pas à corréler directement GE et CGH entre eux, mais bien à corréler chacun des deux blocs moléculaires au bloc des labels. Le bloc $y$ joue ici le rôle de pivot supervisé : c'est lui qui contraint la SGCCA à retenir des composantes discriminantes, et non simplement des composantes de forte variance comme le ferait une PCA classique.
+
+Avec $g(x) = x^2$ les composantes de blocs $y_j = X_j a_j$, le critère SGCCA s'écrit :
+\[
+    \max_{a_1,\,a_2,\,a_3}\;\;
+    \operatorname{cov}\!\bigl(X_1 a_1,\, X_3 a_3\bigr)^2
+    \;+\;
+    \operatorname{cov}\!\bigl(X_2 a_2,\, X_3 a_3\bigr)^2
+\]
+sous les contraintes
+\[
+    \left\{
+    \begin{aligned}
+         & \|a_1\|_2^2 \leqslant 1 \;\text{ et }\; \|a_1\|_1 \leqslant s_1 \\
+         & \|a_2\|_2^2 \leqslant 1 \;\text{ et }\; \|a_2\|_1 \leqslant s_2 \\
+         & \|a_3\|_2^2 \leqslant 1
+    \end{aligned}
+    \right.
+\]
+où $s_1 = 0{,}051$ et $s_2 = 0{,}067$.
+
+Les hyperparamètres de sparsité $(s_1, s_2)$ ont été choisis par cross-validation sur une grille de huit configurations, en suivant le protocole recommandé dans la documentation du package \texttt{RGCCA}. La configuration retenue est celle qui maximise la balanced accuracy moyenne sur les folds de validation, soit \texttt{Set 8} avec  La valeur du critère objectif au point optimal vaut
+$$
+    \sum_{j,k} c_{jk}\, g\bigl(\mathrm{cov}(X_j a_j, X_k a_k)\bigr) = 0.0042.
+$$
+Ce niveau, faible en valeur absolue, mérite quelques mots d'interprétation. Les variables ayant été préalablement standardisées puis mises à l'échelle par $1/\sqrt{p_j}$, l'inertie totale de chaque bloc a été normalisée à 1, ce qui contracte mécaniquement la magnitude des covariances entre composantes. Une valeur de l'ordre de $10^{-3}$ ne reflète donc pas une faiblesse du signal extrait, mais bien l'échelle imposée par la normalisation des blocs. Ce qui importe ici, c'est moins la valeur brute du critère que la stabilité et la qualité discriminante des composantes $X_j a_j$ obtenues, que nous évaluons en aval par un classifieur LDA et que nous validons par un test de permutation. \\
+
+
+\bigskip
+
+
+\begin{center}
+    \Large \textbf{\textbf{Cooperative Learning}}
+\end{center}
+
+On rappelle le problème d'optimisation du cooperative learning appliqué aux GLM. Avec $\theta_x \in \mathbb{R}^{p_x \times 3}$ et $\theta_z \in \mathbb{R}^{p_z \times 3}$ les deux matrices de paramètres (une colonne par classe $c \in \{1,\dots,3\}$),
+le score pré-softmax pour l'observation $i$ et la classe $c$ s'écrit
+\[
+    \eta_{i,c} \;=\; X_i^{\!\top}\theta_{x,c} \;+\; Z_i^{\!\top}\theta_{z,c},
+\]
+et le problème de minimisation conjoint s'écrit
+\[
+    \min_{\theta_x,\,\theta_z}\;
+    \underbrace{\hat{\mathcal{R}}_{CE}(\theta_x,\theta_z)}_{\text{cross-entropie}}
+    \;+\;
+    \underbrace{\frac{\rho}{2}\,\bigl\|X\theta_x - Z\theta_z\bigr\|_F^{2}}_{\mathcal{P}_{\text{accord}}(\theta_x,\theta_z)}
+    \;+\;
+    \underbrace{\lambda\!\left[\alpha\bigl(\|\theta_x\|_1+\|\theta_z\|_1\bigr)
+            + \tfrac{1-\alpha}{2}\bigl(\|\theta_x\|_2^{2}+\|\theta_z\|_2^{2}\bigr)\right]}_{\mathcal{P}_{\text{Elastic-Net}}(\theta_x,\theta_z)}.
+\]
+Trois hyperparamètres contrôlent ce problème :
+\begin{itemize}
+    \item $\rho \geqslant 0$ : mélange des blocs.
+    \item $\lambda > 0$ : intensité globale de la pénalisation.
+    \item $\alpha \in [0,1]$ : mélange Lasso-Ridge.
+\end{itemize}
+
+On procède alors à une cross-validation sur $\rho$ pour trouver le paramètre optimal. On rappelle que pour le cas de la régression logistique, l'entraînement passe par la méthode de Newton, qui linéarise à chaque itération la log-vraisemblance pour la ramener à un problème de moindres carrés pondérés.
+Sur notre jeu de données, en utilisant la librairie \verb|multiview| qui repose en interne sur \verb|glmnet|, on observe que pour toute valeur $\rho > 0$ l'algorithme diverge systématiquement, retournant l'avertissement \verb|glmnet.fit : algorithm did not converge| à chaque fold de la validation croisée. On peut essayer de comprendre cette divergence :
+\begin{itemize}
+    \item les poids de Newton $w_i = \hat p_i(1-\hat p_i)$ tendent vers $0$ sur la classe rare, rendant $X^{\!\top} W X$ quasi-singulière (on sort donc des hypothèses standards de la convergence de l'algorithme de Newton)
+    \item l'agrément ajoute $\rho\,X^{\!\top}X$ à la matrice de Gram et amplifie d'un facteur $(1+\rho)$ des corrélations intra-bloc déjà extrêmes
+\end{itemize}
+On peut ajouter une lecture plus structurelle de cette instabilité : la pénalité $\ell^1$ pousse à annuler des coefficients, tandis que la pénalité d'accord $\mathcal P_{\text{accord}}$ pousse au contraire à coupler les deux vues en alignant leurs scores. Lorsque les deux blocs ne partagent pas de signal commun fort, ces deux forces tirent vers des configurations contradictoires (sparse d'un côté, fortement couplée de l'autre), ce qui peut contribuer à la mauvaise conditionnement du problème augmenté et à la non-convergence observée.
+
+Empiriquement, le package \texttt{multiview} échoue à converger (\texttt{glmnet did not converge}, $>$100 itérations) pour tout $\rho \in \{0{,}1\,;\,0{,}5\,;\,1\,;\,2\,;\,5\}$. Seul $\rho = 0$ donne un résultat exploitable, et la méthode dégénère alors en une régression Lasso One-vs-Rest (détaillé dans le point suivant).
+
+\bigskip
+
+Sur ce constat, nous avons tenté deux interprétations. La première est conceptuelle : les blocs GE et CGH sont structurellement en désaccord, soit parce qu'ils sont complémentaires, soit parce que le bloc CGH se trompe systématiquement et que tout terme d'agrément ne fait que dégrader la prédiction. Cette dernière hypothèse devrait cependant se refléter dans la sélection de variables opérée par la SGCCA, ce qui n'est pas le cas puisque celle-ci retient 11 variables CGH. La seconde interprétation est que le verrou est purement algorithmique : c'est la mise à jour de Newton de \verb|glmnet| qui ne supporte pas la perturbation introduite par la matrice augmentée à $\rho > 0$, indépendamment du fait qu'un $\rho$ optimal théorique existe ou non. Nous ne sommes pas parvenus à lever ce problème pour la formulation One-vs-Rest. En revanche, la formulation multinomiale ne présente pas cette divergence : elle converge et fournit $\rho = 0{,}10$, mais au prix d'une balanced accuracy nettement plus basse (voir section suivante).
+
+
+\bigskip
+
+\begin{center}
+    \Large \textbf{Régression logistique multinomiale : une question d'algorithme}
+\end{center}
+
+Ce qui précède soulève une question plus générale, qui a structuré une partie de notre travail expérimental : la façon dont la régression logistique multiclasse est implémentée en pratique a un impact direct sur les résultats obtenus, à formulation mathématique pourtant identique.
+
+Le langage $\verb|R|$ offre deux modes principaux pour traiter un problème multiclasses à travers la librairie $\verb| glmnet|$ :
+\begin{itemize}
+    \item Résolution multinomiale: optimise directement la log-vraisemblance multinomiale sous contrainte softmax, c'est-à-dire celle qui apparaît plus tôt dans ce rapport.
+    \item Résolution OvR (One vs Rest) : décompose le problème en $K$ ($K =$ nombre de classes) régressions logistiques binaires indépendantes, chacune cherchant à séparer une classe contre l'union des deux autres, et la prédiction finale est obtenue par $\hat y = \displaystyle \underset{k}{\text{argmax }} \hat P_k(x)$ où chaque $\hat P_k$ est calibrée séparément.
+\end{itemize}
+
+Bien que ces deux formulations soient asymptotiquement équivalentes pour un classifieur bayésien, elles n'ont pas l'air de se comporter de la même manière pour $p \ggg n$, surtout avec des classes déséquilibrés. \\
+Il semble que la différence vient du couplage des probabilités. En multinomial, la contrainte $\displaystyle \sum_c P_c(x) = 1$ est imposée par construction via softmax, ce qui couple les coefficients $\beta_c$ entre eux : si la classe $\text{midl}$ est largement minoritaire, le softmax tend à écraser sa probabilité au profit de classes majoritaires, et donc la pénalité $\ell^1$ annule $\beta_{\text{midl}}$.
+
+Au contraire, en OvR, chaque classifieur binaire est entraîné indépendamment. De fait, si la classe midl est trop rare pour qu'un signal soit détecté, ses coefficients $\beta$ s'annulent également, mais l'intercept reste calibré sur la prévalence empirique, et la probabilité prédite ($=$ l'intercept) $\hat P_{\text{midl}} \simeq 0.20$ pour tous les patients, indépendamments des features $\longrightarrow$ probabilité constante qui agit comme un «~filet de sauvetage~», et l'argmax peut alors repêcher midl de temps en temps.
+
+Quantitativement, sur notre jeu de données, cette différence se traduit par un écart important de balanced accuracy, et évidemment par un recall midl de 2/3 en OvR contre 0/3 en multinomial.
+
+\textbf{À noter} : avec la régression logistique multinomiale classique, l'algorithme de Newton ne diverge pas dans la résolution du problème d'optimisation du cooperative learning, et on obtient $\rho^* = 0.10$, avec une accuracy très proche d'une régression logistique multinomiale classique.
+
+\bigskip
+
+De manière générale, les performances obtenues avec OvR sont proches de la première méthode avec sélection de variables par SGCCA. Toutefois, cette dernière semble plus robuste et plus pertinente.
+
+\bigskip
+
+\textbf{Groupped vs Ungroupped} : La régression multinomiale pénalisée admet (encore..) deux variantes selon la façon dont la pénalité $\ell^1$ agit sur la matrice $\beta \in \mathbb{R}^{p \times K}$ :
+\begin{itemize}
+    \item Groupped : $\lambda \sum_{j=1}^{p} \|\beta_{j,\cdot}\|_2$ $\longrightarrow$ norme $\ell^2$ ligne par ligne, puis somme $\ell^1$ sur les lignes. La sparsité agit au niveau variable : un gène est sélectionné pour les $K$ classes simultanément, ou écarté pour toutes. C'est intéressant pour l'interprétation biologique.
+    \item Ungroupped : $\lambda \sum_{j=1}^{p} \sum_{c=1}^{K} |\beta_{j,c}|$ $\longrightarrow$ chaque coefficient $(j,c)$ est pénalisé indépendamment. Chaque classe sélectionne ses propres variables.
+\end{itemize}
+
+On obtient des résultats différents selon la méthode utilisée.
+
+
+\begin{center}
+    \Large \textbf{Résultats finaux et comparaison}
+\end{center}
+
+Quatre pipelines sparses supervisés ont été évalués sur le même protocole (CV stratifiée $7 \times 3 = 21$ plis, balanced accuracy, test set tenu à part). L'objectif est ici moins d'élire un « meilleur » classifieur que de comprendre quelles propriétés méthodologiques pilotent réellement la performance dans le régime $p \ggg n$ avec classe rare.
+
+\textbf{Tableau de synthèse} :
+
+\begin{table}[h]
+    \centering
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{l c c c c}
+        \toprule
+        \textbf{Méthode}                   & \textbf{CV bal\_acc}  & \textbf{Test bal\_acc} & \textbf{midl test} & \textbf{N$_{\text{vars}}$} \\
+        \midrule
+        Multinomial Lasso grouped          & $0{,}784 \pm 0{,}096$ & $0{,}773$              & $0/3$              & $27$ GE                    \\
+        Multinomial Lasso ungrouped        & $0{,}838 \pm 0{,}123$ & $0{,}773$              & $0/3$              & $27$ GE                    \\
+        Cooperative Lasso OvR ($\rho = 0$) & $0{,}833 \pm 0{,}129$ & $0{,}924$              & $2/3$              & $42$ GE                    \\
+        SGCCA + LDA                        & $0{,}829 \pm 0{,}133$ & $0{,}924$              & $2/3$              & $68$ GE + $11$ CGH         \\
+        \bottomrule
+    \end{tabular}
+    \caption{Comparaison des approches évaluées sur le même protocole
+        (CV 7-fold $\times$ 3, test $n=14$). La colonne midl rapporte le nombre
+        de vrais midl correctement reclassés sur les $3$ patients midl du test.}
+    \label{tab:resultats_finaux}
+\end{table}
+
+Premièrement, sur le test, deux pipelines seulement récupèrent midl ($2/3$), ce sont précisément ceux qui exploitent une formulation One-vs-Rest (Cooperative OvR) ou une régression dans un espace latent supervisé (SGCCA + LDA).
+
+Deuxièmement, on remarque que passer de la pénalité $\ell^1$ groupée à la pénalité $\ell^1$ par coefficient
+($\texttt{type.multinomial}$ : \texttt{"grouped"} $\to$ \texttt{"ungrouped"}) fait gagner $+0{,}054$ en CV au seul prix d'un changement d'argument. Par contre, on ne gagne pas de performance sur le test, ce qui n'est pas trop étonnant. \\
+Nous avons également testé une sélection de variables non-supervisée (PCA Sparse dans les folds d'une régression logistique), mais avec des résultats désastreux que nous ne présentons pas ici.
+
+
+\bigskip
+
+\textbf{NB} : Comme nous l'avons mentionné précédemment, nous avons également testé la méthode cooperative en résolution multinomiale. Nous avions obtenu $\rho^* = 0.10$ mais les mêmes résultats (simeqimativement) que les deux multinomiales.
+
+\bigskip
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig1_comparison.pdf}
+    \caption{Performance comparée des quatre approches sparses supervisées. À gauche, balanced accuracy en cross-validation stratifiée ($7\text{-fold} \times 3 = 21$ plis, $n_{\text{train}} = 39$), avec barres d'écart-type. À droite, balanced accuracy sur le test tenu à part ($n_{\text{test}} = 14$). En CV, trois méthodes se partagent le plafond à $\simeq 0{,}83$ ; sur le test, seules SGCCA + LDA et Cooperative OvR atteignent $0{,}924$.}
+\end{figure}
+
+
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig2_hp_sensitivity.pdf}
+    \caption{Sensibilité aux hyperparamètres.
+    \textbf{(A)} SGCCA + LDA : balayage de la sparsité sur les dix configurations testées par \texttt{rgcca\_cv}, optimum aux Sets 8 et 9.
+    \textbf{(B)} Cooperative Lasso OvR : sweep de la pénalité d'accord $\rho$ ; les croix rouges marquent les valeurs pour lesquelles le solveur de \texttt{multiview} ne converge pas, ne laissant exploitable que $\rho = 0$.
+    \textbf{(C)} Multinomial Lasso : sweep de $\alpha$ avec comparaison \texttt{grouped} (violet) vs \texttt{ungrouped} (orange) ; à $\alpha = 1$, le changement de \texttt{type.multinomial} fait gagner $+0{,}054$ en balanced accuracy CV.}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig4_sparsity.pdf}
+    \caption{Sélection de variables des méthodes}
+\end{figure}
+
+Toutes les méthodes data-driven excluent spontanément l'intégralité du bloc CGH ; seule SGCCA en conserve $11$ variables, et ce uniquement parce que la contrainte $s_{\text{CGH}}$ est imposée structurellement. Le cooperative ne sélectionne pas dans CGH puisque $\rho = 0$...
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{fig3_confusion.pdf}
+    \caption{Différentes matrices de confusion}
+\end{figure}
+
+Les quatre méthodes affichent un comportement quasi-identique sur cort et dipg ; la différence se joue exclusivement sur la classe midl ($n = 3$ patients test). SGCCA et Cooperative OvR récupèrent $2/3$ midl,
+les deux variantes du multinomial Lasso $0/3$, redirigées systématiquement vers dipg.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{fig6_midl_probs.pdf}
+    \caption{Repêchage de midl par la régression OvR}
+\end{figure}
+La Cooperative OvR prédit systématiquement $\hat P_{\text{midl}} = \sigma(\log(8/31)) \simeq
+    0{,}205$, un plancher qui suffit à
+l'emporter par argmax pour les exemples de patient P11 et P19. Les deux variantes du multinomial Lasso, contraintes par $\sum_c P_c = 1$, voient cette masse aspirée par dipg.
+
+
+\newpage
+
+\section{Stabilité de nos résultats}
+
+L'analyse de robustesse présentée ici mobilise trois outils méthodologiques classiques : le ré-échantillonnage \emph{bootstrap} \cite{efron1979bootstrap} et la sélection par stabilité \cite{meinshausen2010stability} pour évaluer la stabilité de la sélection de variables, et le test de permutation appliqué à la performance d'un classifieur \cite{ojala2010permutation} pour en établir la significativité statistique.
+
+\subsection{Stabilité de la sélection de variables}
+
+En régime $p \ggg n$, l'identité exacte des variables retenues est intrinsèquement instable : de légères perturbations de l'échantillon d'entraînement peuvent modifier la liste des gènes sélectionnés. Nous avons quantifié ce phénomène par un ré-échantillonnage \emph{bootstrap} \cite{efron1979bootstrap} : pour chaque sous-échantillon, le modèle parcimonieux est ré-estimé et l'on relève la fréquence de sélection de chaque variable (figure~\ref{fig:stab_bootstrap}). Deux constats se dégagent :
+\begin{itemize}
+    \item un \textbf{noyau de gènes} du bloc GE est sélectionné avec une fréquence élevée à travers les ré-échantillons ; ce sont les variables sur lesquelles nos conclusions reposent le plus solidement ;
+    \item l'exclusion quasi systématique du bloc CGH est, elle, remarquablement \textbf{stable} : aucune méthode data-driven ne lui accorde de poids, ce qui constitue un résultat robuste et non l'artefact d'un découpage particulier.
+\end{itemize}
+La fréquence de sélection ainsi mesurée joue le rôle de la probabilité de sélection $\hat\Pi_k$ de la sélection par stabilité \cite{meinshausen2010stability} : ne retenir que les variables dont la fréquence dépasse un seuil $\pi_{\text{thr}} \in (\tfrac12, 1)$ contrôle le nombre attendu de faux positifs, au prix d'une légère perte de sensibilité.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.1\linewidth]{fig9_stability_bootstrap.pdf}
+    \caption{Fréquence de sélection des variables sur $B$ ré-échantillons bootstrap. Un petit noyau de gènes GE est sélectionné de façon stable, tandis que la grande majorité des variables ne l'est que sporadiquement.}
+    \label{fig:stab_bootstrap}
+\end{figure}
+
+La même procédure de ré-échantillonnage, appliquée cette fois au modèle SGCCA, donne une image sensiblement différente (figure \ref{fig:sgcca_stab}). Là où le Lasso One-vs-Rest concentre la stabilité sur un noyau éduit, autour d’un gène GE dominant (\texttt{A\_23\_P205428}, $\hat{\Pi}_k \approx 0,81$) nettement détaché du reste,
+SGCCA répartit la sélection sur une longue liste de gènes dont la fréquence décroît graduellement (de $\hat{\Pi}_k \approx 0,74$ à $0,30$), sans rupture franche : seules deux ou trois variables franchissent le seuil $\pi_{\text{thr}} = 0,6$, et la large bande intermédiaire ($0,3 - 0,6$) change de composition d’un ré-échantillon à l’autre. Le bloc CGH, enfin, n’y contribue qu’un bruit diffus de basse fréquence ($\hat{\Pi}_k \le 0,11$).
+
+Cette diffusion des poids est cohérente avec le mauvais conditionnement du problème augmenté évoqué plus haut, où les pénalités $\ell^1$ et d’accord tirent vers des configurations contradictoires : faute de signal
+commun fort entre les deux blocs, SGCCA ne parvient pas à stabiliser un sous-ensemble reproductible de variables. À performance comparable, la régression logistique pénalisée offre donc une sélection
+plus stable et plus interprétable, et c’est cet écart de stabilité qui motive le choix de la LogReg comme modèle de référence.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.1\linewidth]{fig12_sgcca_stability.pdf}
+    \caption{Fréquence de sélection des variables sous SGCCA, sur $B = 200$ ré-échantillons bootstrap ($s_{GE} = 0,051, s_{CGH} = 0,067, \text{seuil } 0,6$). Comparée à la figure \ref{fig:stab_bootstrap}, la sélection y est nettement plus diffuse : aucun noyau franc ne se détache et le bloc CGH demeure non informatif.}
+    \label{fig:sgcca_stab}
+\end{figure}
+
+\subsection{Reproductibilité et synthèse}
+
+L'ensemble des expériences a été conduit avec des graines aléatoires fixées (découpage des plis, ré-échantillonnage bootstrap, initialisation des solveurs), garantissant la reproductibilité exacte des chiffres rapportés. Le test de permutation ($p = 0{,}002$, sous-section précédente) confirme par ailleurs que le signal prédictif n'est pas un artefact du hasard.
+
+En synthèse, nous distinguons :
+\begin{itemize}
+    \item \textbf{Conclusions robustes} : le signal discriminant est porté par le bloc d'expression génique (GE) ; le bloc CGH est non informatif ; les classes \texttt{cort} et \texttt{dipg} sont bien séparées ; et le signal prédictif global est statistiquement significatif.
+    \item \textbf{Conclusions fragiles} : le classement fin des deux ou trois meilleures méthodes, le recall exact sur la classe \texttt{midl} (qui se joue sur $1$ à $2$ patients), et la liste précise des gènes sélectionnés, qui varie d'un ré-échantillon à l'autre autour d'un noyau stable.
+\end{itemize}
+
+Pour garantir que les performances de nos modèles ne résultent pas d'un simple artefact statistique, nous avons réalisé un test de permutation \cite{ojala2010permutation}. Ce test non paramétrique permet d'évaluer la robustesse du lien entre les données moléculaires et la localisation tumorale.
+
+\textbf{Principe et Hypothèses}
+
+L'objectif est de comparer la performance observée de nos classifieurs à une distribution de performances obtenues sous l'hypothèse nulle.
+\begin{itemize}
+    \item  Hypothèse nulle $H_0$ : Il n'existe aucune relation de dépendance entre les variables et les étiquettes de classes. Sous cette hypothèse, la balanced accuracy moyenne attendue est de $1/3$ pour notre problème à trois classes .
+    \item Hypothèse alternative $H_1$ : Le modèle a appris un signal biologique réel permettant de discriminer les localisations.
+\end{itemize}
+
+\bigskip
+
+\textbf{Procédure algorithmique}
+
+\bigskip
+
+Le test suit les étapes :
+\begin{itemize}
+    \item Désaccouplement : lien entre les observations $X$ et les labels $Y$ brisés par des permutations aléatoires.
+    \item La pipeline retourne entièrement et on ré-entraine un modèle sur les données permutées
+    \item On répète l'opération $B = 500$ fois pour construire une distribution empirique des scores sous $H_0$
+    \item Calcul de la $p$-value par la proportion de permutations ayant donné un score supérieur ou égal au score observé sur les données réelles.
+\end{itemize}
+
+\paragraph{Réalisation et Résultats :}
+
+Tous les modèles obtiennent une \textbf{$p$-value de $0,002$} . Nous pouvons donc rejeter $H_0$ avec une grande confiance et affirmer que le signal prédictif identifié est statistiquement significatif et non dû au hasard .
+
+
+\newpage
+
+\nocite{ding2022cooperative,tenenhaus2011rgcca,tenenhaus2014sgcca,meinshausen2010stability,tibshirani1996lasso,zou2005elasticnet,friedman2010glmnet,tibshirani2005fusedlasso,chawla2002smote,efron1979bootstrap,ojala2010permutation}
+\section*{Références}
+\printbibliography[heading=none]
+\label{sec:sources}
+
+\end{document}

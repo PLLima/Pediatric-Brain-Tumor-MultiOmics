@@ -48,7 +48,8 @@ Detailed results and visualizations are strictly maintained in the [`reports/`](
 ├── notebooks/             # Jupyter notebooks and R scripts for EDA, modeling, and evaluation
 ├── reports/               # Final documentation, PDF reports, and synthesized markdown summaries
 │   ├── figures/           # Auto-generated plots, confusion matrices, and EDA charts
-│   ├── rapport.pdf        # Comprehensive theoretical and statistical foundation
+│   ├── report.pdf         # Comprehensive theoretical and statistical foundation
+│   ├── presentation.pdf   # Slide deck presentation
 │   └── pipeline_cooperative.pdf
 ├── src/
 │   └── visualization/     # Source code containing python scripts to generate reporting figures
